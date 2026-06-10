@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Navigation 2.8.x lint checks use a newer Lint API than AGP 8.6.1 provides; skipped gracefully -->
+    <issue id="ObsoleteLintCustomCheck" severity="ignore" />
+
+    <!-- AGP version is intentionally pinned to 8.6.1 for Gradle 8.9 / JDK 17 compatibility -->
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+
+    <!-- HIGH_SAMPLING_RATE_SENSORS is required for accurate accelerometer-based sleep phase detection -->
+    <issue id="HighSamplingRate" severity="ignore" />
+
+    <!-- getIdentifier() used for dynamic raw resource lookup keyed by BundledSound enum name -->
+    <issue id="DiscouragedApi" severity="ignore" />
+
+    <!-- Several strings are reserved for features not yet fully wired (permission rationale dialogs,
+         sound category picker, notification snooze action, settings section labels) -->
+    <issue id="UnusedResources" severity="ignore" />
+</lint>

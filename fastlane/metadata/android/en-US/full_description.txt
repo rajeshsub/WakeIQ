@@ -1,0 +1,36 @@
+WakeIQ wakes you up gently and refreshed by working with your natural sleep cycles, not against them.
+
+Most alarms jolt you out of deep sleep (slow-wave or N3 stage), causing sleep inertia — that heavy, groggy feeling that can last for hours. WakeIQ is different.
+
+HOW IT WORKS
+
+Your sleep naturally cycles through light and deep stages roughly every 90 minutes. WakeIQ monitors your movement using your phone's built-in accelerometer. More movement means lighter sleep. When you enter a light sleep phase within a configurable window before your alarm time, WakeIQ gently begins waking you — instead of shocking you awake from deep sleep.
+
+Even if you sleep deeply right through the window, the alarm still goes off on time. But instead of blaring at full volume, sound and screen brightness gradually ramp up over a configurable period (5–30 minutes), giving your body a natural, gentle transition from sleep to wakefulness.
+
+FEATURES
+
+• Smart wake window: set a 10–30 minute window; alarm fires early if light sleep detected
+• Gradual sound ramp: volume increases slowly from silence to your chosen level
+• Gradual screen brightening: room fills with light naturally, simulating sunrise
+• 12 bundled sounds: birds, rain, thunderstorm, ocean waves, farm animals, rooster, train station, airport, café, office, piano melody, singing bowl
+• Custom sounds: use any audio file from your device
+• Full alarm scheduling: one-shot or recurring by day of week
+• Snooze support with configurable duration
+• Per-alarm settings: sensitivity, ramp duration, smart window
+
+PRIVACY AND OPENNESS
+
+• No ads, ever
+• No tracking or analytics
+• No internet permission required for core function
+• Fully open source (MIT license)
+• F-Droid compatible
+
+PERMISSIONS EXPLAINED
+
+Every permission is explained in plain English before it is requested. You can deny any permission — the app will tell you exactly what feature is affected.
+
+FREE FOREVER
+
+WakeIQ is and will always be completely free. If it helps you wake up refreshed, you are welcome (never pressured) to support development via Liberapay or Ko-fi.

@@ -1,0 +1,8 @@
+Initial release.
+
+• Smart wake window using accelerometer-based light sleep detection
+• Gradual sound and brightness ramp
+• 12 bundled CC0 nature and ambient sounds
+• Custom audio file support
+• Recurring alarms by day of week
+• No ads, no tracking, MIT licensed

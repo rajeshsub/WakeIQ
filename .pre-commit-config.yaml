@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=10240']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  - repo: local
+    hooks:
+      - id: ktlint-check
+        name: ktlint
+        entry: bash -c './gradlew ktlintCheck --daemon 2>&1'
+        language: system
+        files: \.kt$
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: detekt
+        name: detekt
+        entry: bash -c './gradlew detekt --daemon 2>&1'
+        language: system
+        files: \.kt$
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: no-println
+        name: no println / System.out
+        language: pygrep
+        entry: '(System\.out\.|System\.err\.|println\()'
+        files: \.kt$
+        exclude: 'src/test|src/androidTest'

@@ -1,0 +1,9 @@
+package com.wakeiq.domain.usecase
+
+import com.wakeiq.domain.model.Alarm
+import com.wakeiq.domain.repository.AlarmRepository
+import javax.inject.Inject
+
+class SaveAlarmUseCase @Inject constructor(private val repository: AlarmRepository) {
+    suspend operator fun invoke(alarm: Alarm): Long = repository.save(alarm)
+}

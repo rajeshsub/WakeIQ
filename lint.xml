@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Baseline security checks -->
+    <issue id="HardcodedDebugMode" severity="error" />
+    <issue id="SetTextI18n" severity="error" />
+
+    <!-- Suppress checks that conflict with our patterns -->
+    <issue id="OldTargetApi" severity="ignore" />
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="GoogleAppIndexingWarning" severity="ignore" />
+
+    <!-- Accessibility -->
+    <issue id="ContentDescription" severity="warning" />
+
+    <!-- Performance -->
+    <issue id="DrawAllocation" severity="error" />
+    <issue id="ObsoleteSdkInt" severity="warning" />
+    <issue id="UseSparseArrays" severity="warning" />
+
+    <!-- Security -->
+    <issue id="AllowBackup" severity="error" />
+    <issue id="ExportedContentProvider" severity="error" />
+    <issue id="ExportedReceiver" severity="error" />
+</lint>

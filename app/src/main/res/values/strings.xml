@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WakeIQ</string>
+
+    <!-- Home screen -->
+    <string name="home_title">Alarms</string>
+    <string name="home_no_alarms">No alarms set.\nTap + to create one.</string>
+    <string name="add_alarm">Add alarm</string>
+    <string name="alarm_enabled">Alarm enabled</string>
+    <string name="alarm_disabled">Alarm disabled</string>
+
+    <!-- Edit alarm screen -->
+    <string name="edit_alarm_title_new">New Alarm</string>
+    <string name="edit_alarm_title_edit">Edit Alarm</string>
+    <string name="label_hint">Label (optional)</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+
+    <!-- Days of week -->
+    <string name="mon">Mon</string>
+    <string name="tue">Tue</string>
+    <string name="wed">Wed</string>
+    <string name="thu">Thu</string>
+    <string name="fri">Fri</string>
+    <string name="sat">Sat</string>
+    <string name="sun">Sun</string>
+    <string name="once">Once</string>
+    <string name="every_day">Every day</string>
+    <string name="weekdays">Weekdays</string>
+    <string name="weekends">Weekends</string>
+
+    <!-- Smart window -->
+    <string name="smart_window_title">Smart wake window</string>
+    <string name="smart_window_desc">Start alarm up to %d min early if you\'re in light sleep</string>
+    <string name="smart_window_off">Disabled. Alarm fires exactly on time.</string>
+    <string name="ramp_duration_title">Gradual wake duration</string>
+    <string name="ramp_duration_desc">Sound and light take %d min to reach full intensity</string>
+    <string name="motion_sensitivity_title">Motion sensitivity</string>
+    <string name="motion_sensitivity_low">Low</string>
+    <string name="motion_sensitivity_medium">Medium</string>
+    <string name="motion_sensitivity_high">High</string>
+
+    <!-- Sound picker -->
+    <string name="sound_picker_title">Alarm sound</string>
+    <string name="sound_custom">Custom…</string>
+    <string name="sound_birds_chirping">Birds chirping</string>
+    <string name="sound_rain">Gentle rain</string>
+    <string name="sound_thunderstorm">Thunderstorm</string>
+    <string name="sound_ocean_waves">Ocean waves</string>
+    <string name="sound_farm_animals">Farm animals</string>
+    <string name="sound_rooster">Rooster</string>
+    <string name="sound_train_station">Train station</string>
+    <string name="sound_airport">Airport terminal</string>
+    <string name="sound_cafe">Café ambience</string>
+    <string name="sound_office">Office morning</string>
+    <string name="sound_piano_melody">Piano melody</string>
+    <string name="sound_singing_bowl">Singing bowl</string>
+    <string name="sound_category_nature">Nature</string>
+    <string name="sound_category_ambient">Ambient</string>
+
+    <!-- Alarm firing screen -->
+    <string name="alarm_dismiss">Dismiss</string>
+    <string name="alarm_snooze">Snooze %d min</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_default_smart_window">Default smart window</string>
+    <string name="settings_default_ramp">Default wake duration</string>
+    <string name="settings_default_sensitivity">Default sensitivity</string>
+    <string name="settings_snooze_duration">Snooze duration</string>
+    <string name="settings_reset_donation_prompt">Reset donation prompt</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %s</string>
+    <string name="settings_source_code">Source code (GitHub)</string>
+    <string name="settings_license">License: MIT</string>
+
+    <!-- Permissions -->
+    <string name="perm_rationale_exact_alarm_title">Exact alarm timing</string>
+    <string name="perm_rationale_exact_alarm_body">Without this permission, your alarm may fire several minutes late. Tap \"Allow\" to open Settings and enable exact alarms for WakeIQ.</string>
+    <string name="perm_rationale_notifications_title">Alarm notification</string>
+    <string name="perm_rationale_notifications_body">Shows a persistent notification while your alarm is active. Without it, the alarm cannot display on your screen.</string>
+    <string name="perm_rationale_audio_title">Custom alarm sounds</string>
+    <string name="perm_rationale_audio_body">Needed to play audio files you choose from your device. Without it, only bundled sounds are available.</string>
+    <string name="perm_rationale_write_settings_title">Screen brightness</string>
+    <string name="perm_rationale_write_settings_body">Allows the alarm to gradually brighten your screen. Without it, the brightness ramp feature is disabled.</string>
+    <string name="perm_rationale_boot_title">Survive device restart</string>
+    <string name="perm_rationale_boot_body">Re-registers your alarms after the device reboots. Without it, alarms are lost when you restart your phone.</string>
+    <string name="perm_open_settings">Open Settings</string>
+    <string name="perm_skip">Skip (disables this feature)</string>
+    <string name="perm_allow">Allow</string>
+
+    <!-- Donation -->
+    <string name="donation_title">WakeIQ is free, forever</string>
+    <string name="donation_body">No ads, no tracking, open source. If it helps you wake up refreshed, consider supporting development.</string>
+    <string name="donation_liberapay">Support on Liberapay</string>
+    <string name="donation_kofi">Buy me a coffee (Ko-fi)</string>
+    <string name="donation_dismiss">No thanks</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_alarm_name">Alarm</string>
+    <string name="notif_channel_alarm_desc">Active alarm notifications</string>
+    <string name="notif_alarm_title">Wake up!</string>
+    <string name="notif_alarm_body">%s</string>
+    <string name="notif_alarm_dismiss">Dismiss</string>
+    <string name="notif_alarm_snooze">Snooze</string>
+
+    <!-- ACRA crash reports -->
+    <string name="acra_notification_title">WakeIQ crashed</string>
+    <string name="acra_notification_text">Tap to send an anonymous crash report and help fix this bug.</string>
+    <string name="acra_notification_send">Send report</string>
+    <string name="acra_notification_dismiss">Dismiss</string>
+
+    <!-- Tooltip / explainer strings -->
+    <string name="smart_wake_label">Smart wake</string>
+    <string name="smart_wake_tooltip_title">What is Smart wake?</string>
+    <string name="smart_wake_tooltip_body">Most alarm apps yank you out of deep sleep, causing grogginess. WakeIQ is different.\n\nHuman sleep moves through cycles of light (N1/N2), deep (N3/slow-wave), and REM stages roughly every 90 minutes. Waking during deep sleep causes sleep inertia (that heavy, foggy feeling).\n\nSmart wake monitors your phone\'s accelerometer during a window before your alarm. More movement = lighter sleep stage. If light sleep is detected early, the alarm triggers then so you surface naturally. If no light sleep is detected, the alarm fires at your set time as normal.\n\nConfigure the window duration in Settings.</string>
+    <string name="motion_sensitivity_tooltip_title">Why motion sensitivity?</string>
+    <string name="motion_sensitivity_tooltip_body">Your phone\'s accelerometer detects movement during sleep. More movement = lighter sleep stage.\n\nLow: requires significant movement to trigger early wake.\nMedium: recommended for most people.\nHigh: triggers on subtle shifts, best for light sleepers.</string>
+    <string name="repeat_daily">Daily</string>
+    <string name="tooltip_ok">Got it</string>
+
+    <!-- Warm hue / display settings -->
+    <string name="warm_hue_title">Alarm card colour</string>
+    <string name="warm_hue_none">Default</string>
+    <string name="warm_hue_sand">Sand</string>
+    <string name="warm_hue_amber">Amber</string>
+    <string name="warm_hue_rose">Rose</string>
+    <string name="warm_hue_lavender">Lavender</string>
+
+    <!-- Blue light reduction -->
+    <string name="blue_light_title">Reduce blue light</string>
+    <string name="blue_light_desc">Warm tint within app, 6 pm – 6 am</string>
+    <string name="blue_light_tooltip_title">Why reduce blue light?</string>
+    <string name="blue_light_tooltip_body">Blue light from screens suppresses melatonin, the hormone that tells your body it\'s time to sleep. Reducing blue light in the evenings helps you fall asleep faster and improves sleep quality.\n\nThis filter only affects WakeIQ, not your device\'s global display.</string>
+
+    <!-- About section -->
+    <string name="about_title">About</string>
+    <string name="about_science_title">Scientifically designed</string>
+    <string name="about_science_body">Human sleep moves through cycles of light (N1/N2), deep slow-wave (N3), and REM stages every ~90 minutes. Waking during deep sleep causes sleep inertia (that heavy, foggy feeling that can last hours).\n\nWakeIQ uses your phone\'s accelerometer to detect movement patterns during sleep. More movement = lighter sleep stage. It targets your lightest phase within a configurable window before your alarm time, so you wake during N1 or N2 when you surface naturally refreshed, never dragged from deep sleep.</string>
+    <string name="about_gradual_wake_title">Wakes you gently, never with a jolt</string>
+    <string name="about_gradual_wake_body">Your alarm never blares suddenly. Sound begins at barely a whisper, then gently rises over the first two minutes. By five minutes it reaches full volume and stays there.\n\nIf you sleep through it, WakeIQ keeps trying; automatically switching to a different sound every two minutes so your brain gets a fresh signal. No sudden shock. Just a persistent, ever-louder nudge toward waking.</string>
+    <string name="about_privacy_title">Your data stays on your phone, always</string>
+    <string name="about_privacy_body">WakeIQ never collects, records, or sells any data about you. No analytics. No usage tracking. No telemetry. No silent background uploads. Everything the app knows about you (your alarms, your preferences, your sleep patterns) lives only on your device and never goes anywhere.</string>
+    <string name="about_description">WakeIQ is genuinely free, open-source software released under the MIT License. There is no catch, no premium tier, and no upsell, ever. You are never expected to pay. If it makes your mornings better and you feel like spreading a little joy, a donation is warmly welcome. But truly only if you want to.</string>
+    <string name="about_kofi_button">Buy me a coffee ☕</string>
+    <string name="about_mit_badge">MIT License · free forever · no ads · no tracking · no data collection</string>
+    <string name="about_github_button">View source on GitHub</string>
+</resources>

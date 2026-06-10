@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme. Compose handles most theming; this is the XML bridge. -->
+    <style name="Theme.WakeIQ" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Full-screen theme for AlarmActivity. Screen-on handled in code via window flags. -->
+    <style name="Theme.WakeIQ.Alarm" parent="Theme.WakeIQ">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

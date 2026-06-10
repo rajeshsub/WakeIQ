@@ -1,0 +1,138 @@
+[versions]
+# Build toolchain
+agp = "8.6.1"
+kotlin = "2.0.20"
+ksp = "2.0.20-1.0.25"
+
+# Android SDK
+compileSdk = "35"
+minSdk = "24"
+targetSdk = "35"
+
+# AndroidX core
+coreKtx = "1.13.1"
+lifecycleRuntime = "2.8.4"
+activityCompose = "1.9.1"
+navigationCompose = "2.8.1"
+datastore = "1.1.1"
+workManager = "2.9.1"
+
+# Compose
+composeBom = "2024.09.03"
+
+# Architecture
+hilt = "2.51.1"
+hiltNavigationCompose = "1.2.0"
+room = "2.6.1"
+
+# Media
+media3 = "1.4.1"
+
+# Async
+coroutines = "1.9.0"
+
+# Serialization
+kotlinSerialization = "1.7.3"
+
+# Logging / observability
+timber = "5.0.1"
+acra = "5.11.1"
+leakCanary = "2.14"
+
+# Testing – local
+junit5 = "5.10.2"
+junit5Android = "1.10.2.0"
+mockk = "1.13.12"
+turbine = "1.1.0"
+coroutinesTest = "1.9.0"
+
+# Testing – instrumented
+espresso = "3.6.1"
+testRunner = "1.6.2"
+testExtJunit = "1.2.1"
+
+# Desugaring
+desugar = "2.0.3"
+
+# Code quality
+ktlintPlugin = "12.1.2"
+detekt = "1.23.7"
+
+[libraries]
+# AndroidX
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntime" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntime" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+
+# Compose BOM
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+
+# Hilt
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+
+# Media3
+media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
+media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
+
+# Coroutines
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinSerialization" }
+
+# Logging / observability
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+acra-core = { group = "ch.acra", name = "acra-core", version.ref = "acra" }
+acra-notification = { group = "ch.acra", name = "acra-notification", version.ref = "acra" }
+leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakCanary" }
+
+# Testing – local
+junit5-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit5" }
+junit5-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit5" }
+junit5-params = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "junit5" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+
+# Testing – instrumented
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
+test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "testExtJunit" }
+
+# Desugaring
+desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar" }
+
+# Detekt
+detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+junit5-android = { id = "de.mannodermaus.android-junit5", version.ref = "junit5Android" }
