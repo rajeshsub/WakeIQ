@@ -66,6 +66,7 @@ class HomeViewModelTest {
     fun `toggle calls scheduler schedule when enabling`() = runTest {
         val alarm = Alarm(id = 1L, hour = 7, minute = 0, isEnabled = false)
         every { getAlarms() } returns flowOf(emptyList())
+        every { scheduler.canScheduleExactAlarms() } returns true
 
         val viewModel = HomeViewModel(getAlarms, toggleAlarm, deleteAlarm, saveAlarm, scheduler, prefs)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -74,6 +75,25 @@ class HomeViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { scheduler.schedule(any()) }
+    }
+
+    @Test
+    fun `toggle emits openExactAlarmSettings when permission denied`() = runTest {
+        val alarm = Alarm(id = 3L, hour = 7, minute = 0, isEnabled = false)
+        every { getAlarms() } returns flowOf(emptyList())
+        every { scheduler.canScheduleExactAlarms() } returns false
+
+        val viewModel = HomeViewModel(getAlarms, toggleAlarm, deleteAlarm, saveAlarm, scheduler, prefs)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.openExactAlarmSettings.test {
+            viewModel.toggle(alarm, true)
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 0) { scheduler.schedule(any()) }
     }
 
     @Test
