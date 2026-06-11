@@ -13,8 +13,11 @@ import com.wakeiq.domain.usecase.GetAlarmsUseCase
 import com.wakeiq.domain.usecase.SaveAlarmUseCase
 import com.wakeiq.domain.usecase.ToggleAlarmUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -41,6 +44,9 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val _openExactAlarmSettings = MutableSharedFlow<Unit>()
+    val openExactAlarmSettings: SharedFlow<Unit> = _openExactAlarmSettings.asSharedFlow()
 
     init {
         viewModelScope.launch { seedDefaultAlarmIfNeeded() }
@@ -95,6 +101,10 @@ class HomeViewModel @Inject constructor(
 
     fun toggle(alarm: Alarm, enabled: Boolean) {
         viewModelScope.launch {
+            if (enabled && !scheduler.canScheduleExactAlarms()) {
+                _openExactAlarmSettings.emit(Unit)
+                return@launch
+            }
             toggleAlarm(alarm.id, enabled)
             if (enabled) {
                 scheduler.schedule(alarm.copy(isEnabled = true))

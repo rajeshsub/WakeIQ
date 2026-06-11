@@ -20,6 +20,9 @@ class AlarmScheduler @Inject constructor(
 ) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
+    fun canScheduleExactAlarms(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+
     fun schedule(alarm: Alarm) {
         if (!alarm.isEnabled) return
         val triggerAt = getNextAlarmTime(alarm) ?: return
