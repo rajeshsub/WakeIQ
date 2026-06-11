@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,11 +26,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,10 +46,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeiq.R
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.presentation.AppStateViewModel
+import com.wakeiq.presentation.permissions.PermissionsViewModel
 import java.time.DayOfWeek
 
 private const val DAYS_IN_WEEK = 7
@@ -78,14 +85,27 @@ fun HomeScreen(
     onAddAlarm: () -> Unit,
     onEditAlarm: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenPermissions: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
     appState: AppStateViewModel = hiltViewModel(),
+    permissionsViewModel: PermissionsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val warmHueIndex by appState.warmHueIndex.collectAsStateWithLifecycle()
+    val is24Hour by appState.use24HourClock.collectAsStateWithLifecycle()
     val palette = CardPalettes.getOrElse(warmHueIndex) { CardPalettes[0] }
+    val permissions by permissionsViewModel.permissions.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showExactAlarmDialog by remember { mutableStateOf(false) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) permissionsViewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.openExactAlarmSettings.collect { showExactAlarmDialog = true }
@@ -135,6 +155,9 @@ fun HomeScreen(
                 alarms = state.alarms,
                 padding = padding,
                 palette = palette,
+                is24Hour = is24Hour,
+                showPermissionWarning = permissionsViewModel.anyCriticalMissing,
+                onGrantPermissions = onOpenPermissions,
                 onToggle = { alarm, enabled -> viewModel.toggle(alarm, enabled) },
                 onTap = { alarm -> onEditAlarm(alarm.id) },
             )
@@ -155,48 +178,104 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
     )
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun AlarmList(
     alarms: List<Alarm>,
     padding: PaddingValues,
     palette: CardPalette,
+    is24Hour: Boolean,
+    showPermissionWarning: Boolean,
+    onGrantPermissions: () -> Unit,
     onToggle: (Alarm, Boolean) -> Unit,
     onTap: (Alarm) -> Unit,
 ) {
-    if (alarms.isEmpty()) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.home_no_alarms),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-            )
-        }
-        return
-    }
-
     LazyColumn(
         modifier = Modifier.padding(padding),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(alarms, key = { it.id }) { alarm ->
-            AlarmCard(
-                alarm = alarm,
-                palette = palette,
-                onToggle = { enabled -> onToggle(alarm, enabled) },
-                onClick = { onTap(alarm) },
-            )
+        if (showPermissionWarning) {
+            item(key = "perm_warning") {
+                PermissionWarningBanner(onClick = onGrantPermissions)
+            }
+        }
+        if (alarms.isEmpty()) {
+            item(key = "empty") {
+                Box(
+                    modifier = Modifier
+                        .fillParentMaxSize()
+                        .padding(bottom = if (showPermissionWarning) 80.dp else 0.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_no_alarms),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        } else {
+            items(alarms, key = { it.id }) { alarm ->
+                AlarmCard(
+                    alarm = alarm,
+                    palette = palette,
+                    is24Hour = is24Hour,
+                    onToggle = { enabled -> onToggle(alarm, enabled) },
+                    onClick = { onTap(alarm) },
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun AlarmCard(alarm: Alarm, palette: CardPalette, onToggle: (Boolean) -> Unit, onClick: () -> Unit) {
+private fun PermissionWarningBanner(onClick: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.WarningAmber,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.perm_banner_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Text(
+                    text = stringResource(R.string.perm_banner_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+            TextButton(onClick = onClick) {
+                Text(
+                    text = stringResource(R.string.perm_banner_fix),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlarmCard(
+    alarm: Alarm,
+    palette: CardPalette,
+    is24Hour: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onClick: () -> Unit,
+) {
     val cardColors = if (palette.isCustom) {
         CardDefaults.cardColors(containerColor = palette.background)
     } else {
@@ -224,7 +303,7 @@ private fun AlarmCard(alarm: Alarm, palette: CardPalette, onToggle: (Boolean) ->
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = alarm.timeString,
+                    text = alarm.formattedTime(is24Hour),
                     style = MaterialTheme.typography.displayLarge,
                     color = primaryText,
                 )

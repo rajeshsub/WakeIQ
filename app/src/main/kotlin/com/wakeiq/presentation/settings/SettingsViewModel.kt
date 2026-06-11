@@ -19,6 +19,7 @@ data class SettingsUiState(
     val defaultSnoozeMinutes: Int = 9,
     val blueLightReductionEnabled: Boolean = true,
     val warmHueIndex: Int = 0,
+    val use24HourClock: Boolean = false,
 )
 
 @HiltViewModel
@@ -40,6 +41,8 @@ class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) :
         state.copy(blueLightReductionEnabled = blue)
     }.combine(prefs.warmHueIndex) { state, hue ->
         state.copy(warmHueIndex = hue)
+    }.combine(prefs.use24HourClock) { state, is24Hour ->
+        state.copy(use24HourClock = is24Hour)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setDefaultSmartWindow(minutes: Int) = viewModelScope.launch {
@@ -60,5 +63,9 @@ class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) :
 
     fun setWarmHueIndex(index: Int) = viewModelScope.launch {
         prefs.setWarmHueIndex(index)
+    }
+
+    fun setUse24HourClock(enabled: Boolean) = viewModelScope.launch {
+        prefs.setUse24HourClock(enabled)
     }
 }

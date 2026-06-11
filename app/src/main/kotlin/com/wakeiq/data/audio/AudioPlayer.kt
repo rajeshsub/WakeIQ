@@ -2,6 +2,8 @@ package com.wakeiq.data.audio
 
 import android.content.Context
 import android.net.Uri
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -20,6 +22,7 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         release()
         val uri = resolveUri(soundConfig)
         player = ExoPlayer.Builder(context).build().also { exo ->
+            exo.setAudioAttributes(alarmAudioAttributes(), true)
             exo.setMediaItem(MediaItem.fromUri(uri))
             exo.repeatMode = Player.REPEAT_MODE_ALL
             exo.volume = 0f
@@ -43,8 +46,8 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         Timber.d("Sound switched to: ${soundConfig.bundledSound}")
     }
 
-    // Phase 1: whisper ramp (0 → WHISPER_VOLUME over WHISPER_PHASE_MS).
-    // Phase 2: escalation ramp (WHISPER_VOLUME → targetVolume over ESCALATION_PHASE_MS).
+    // Phase 1: whisper ramp (0 to WHISPER_VOLUME over WHISPER_PHASE_MS).
+    // Phase 2: escalation ramp (WHISPER_VOLUME to targetVolume over ESCALATION_PHASE_MS).
     // Phase 3: holds at targetVolume. Caller responsible for sound cycling after this returns.
     suspend fun escalateVolume(targetVolume: Float) {
         rampVolumeBetween(0f, WHISPER_VOLUME, WHISPER_PHASE_MS)
@@ -70,9 +73,10 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         release()
         val uri = resolveUri(soundConfig)
         player = ExoPlayer.Builder(context).build().also { exo ->
+            exo.setAudioAttributes(previewAudioAttributes(), true)
             exo.setMediaItem(MediaItem.fromUri(uri))
             exo.repeatMode = Player.REPEAT_MODE_OFF
-            exo.volume = PREVIEW_VOLUME
+            exo.volume = 1f
             exo.prepare()
             exo.play()
         }
@@ -95,9 +99,18 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         return Uri.parse("android.resource://${context.packageName}/$resId")
     }
 
+    private fun alarmAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
+        .setUsage(C.USAGE_ALARM)
+        .setContentType(C.AUDIO_CONTENT_TYPE_SONIFICATION)
+        .build()
+
+    private fun previewAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
+        .setUsage(C.USAGE_MEDIA)
+        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+        .build()
+
     companion object {
         private const val VOLUME_RAMP_STEPS = 100
-        private const val PREVIEW_VOLUME = 0.6f
         const val WHISPER_VOLUME = 0.15f
         const val WHISPER_PHASE_MS = 120_000L
         const val ESCALATION_PHASE_MS = 180_000L

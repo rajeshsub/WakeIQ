@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +41,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,12 +77,6 @@ fun EditAlarmScreen(
     val audioPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent(),
     ) { uri: Uri? -> uri?.let { viewModel.setCustomSound(it) } }
-
-    val timePickerState = rememberTimePickerState(
-        initialHour = uiState.hour,
-        initialMinute = uiState.minute,
-        is24Hour = true,
-    )
 
     var showSmartWakeDialog by remember { mutableStateOf(false) }
     var showMotionDialog by remember { mutableStateOf(false) }
@@ -137,6 +134,13 @@ fun EditAlarmScreen(
             )
         },
     ) { padding ->
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -145,13 +149,19 @@ fun EditAlarmScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            TimePicker(
-                state = timePickerState,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            LaunchedEffect(timePickerState.hour, timePickerState.minute) {
-                viewModel.setTime(timePickerState.hour, timePickerState.minute)
+            key(uiState.isLoading) {
+                val timePickerState = rememberTimePickerState(
+                    initialHour = uiState.hour,
+                    initialMinute = uiState.minute,
+                    is24Hour = uiState.is24Hour,
+                )
+                TimePicker(
+                    state = timePickerState,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                LaunchedEffect(timePickerState.hour, timePickerState.minute) {
+                    viewModel.setTime(timePickerState.hour, timePickerState.minute)
+                }
             }
 
             // Repeat / day selection

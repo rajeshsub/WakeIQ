@@ -45,6 +45,9 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     val defaultAlarmSeeded: Flow<Boolean> =
         store.data.map { it[KEY_DEFAULT_ALARM_SEEDED] ?: false }
 
+    val use24HourClock: Flow<Boolean> =
+        store.data.map { it[KEY_USE_24_HOUR_CLOCK] ?: false }
+
     suspend fun setDefaultSmartWindow(minutes: Int) {
         store.edit { it[KEY_SMART_WINDOW] = minutes }
     }
@@ -73,6 +76,10 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         store.edit { it[KEY_DEFAULT_ALARM_SEEDED] = true }
     }
 
+    suspend fun setUse24HourClock(enabled: Boolean) {
+        store.edit { it[KEY_USE_24_HOUR_CLOCK] = enabled }
+    }
+
     private companion object {
         const val DEFAULT_SMART_WINDOW_MINUTES = 20
         const val DEFAULT_RAMP_DURATION_MINUTES = 15
@@ -85,5 +92,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val KEY_BLUE_LIGHT_REDUCTION = booleanPreferencesKey("blue_light_reduction_enabled")
         val KEY_WARM_HUE_INDEX = intPreferencesKey("warm_hue_index")
         val KEY_DEFAULT_ALARM_SEEDED = booleanPreferencesKey("default_alarm_seeded")
+        val KEY_USE_24_HOUR_CLOCK = booleanPreferencesKey("use_24_hour_clock")
     }
 }

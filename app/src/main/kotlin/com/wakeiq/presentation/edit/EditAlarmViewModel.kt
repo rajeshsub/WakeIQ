@@ -37,6 +37,7 @@ data class EditAlarmUiState(
     val motionSensitivity: MotionSensitivity = MotionSensitivity.MEDIUM,
     val snoozeMinutes: Int = 9,
     val useSmartWake: Boolean = true,
+    val is24Hour: Boolean = false,
     val isSaving: Boolean = false,
     val savedOrDeleted: Boolean = false,
 )
@@ -61,6 +62,7 @@ class EditAlarmViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            val is24Hour = prefs.use24HourClock.first()
             if (alarmId == -1L) {
                 val sensitivity = prefs.defaultMotionSensitivity.first()
                 val snooze = prefs.defaultSnoozeMinutes.first()
@@ -70,6 +72,7 @@ class EditAlarmViewModel @Inject constructor(
                         isNew = true,
                         motionSensitivity = sensitivity,
                         snoozeMinutes = snooze,
+                        is24Hour = is24Hour,
                     )
                 }
             } else {
@@ -87,6 +90,7 @@ class EditAlarmViewModel @Inject constructor(
                             motionSensitivity = alarm.motionSensitivity,
                             snoozeMinutes = alarm.snoozeMinutes,
                             useSmartWake = alarm.useSmartWake,
+                            is24Hour = is24Hour,
                         )
                     }
                 }

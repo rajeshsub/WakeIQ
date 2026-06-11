@@ -74,6 +74,35 @@
     <string name="settings_source_code">Source code (GitHub)</string>
     <string name="settings_license">License: MIT</string>
 
+    <!-- Permission setup screen -->
+    <string name="perm_setup_heading">Before we start</string>
+    <string name="perm_setup_subheading">WakeIQ needs a few permissions to wake you reliably. Without the required ones, your alarm may not ring.</string>
+    <string name="perm_setup_required">Required</string>
+    <string name="perm_setup_grant">Grant</string>
+    <string name="perm_setup_continue">Let\'s go</string>
+    <string name="perm_setup_continue_anyway">Continue anyway (alarm may not ring)</string>
+    <string name="perm_setup_warning">One or more required permissions are missing. Your alarm may not ring.</string>
+
+    <string name="perm_setup_notif_title">Alarm notifications</string>
+    <string name="perm_setup_notif_body">Without this, the alarm cannot display on your screen or make sound while the app is in the background. Required on Android 13 and above.</string>
+
+    <string name="perm_setup_exact_alarm_title">Exact alarm timing</string>
+    <string name="perm_setup_exact_alarm_body">Without this, your alarm may fire several minutes late. Required on Android 12.</string>
+
+    <string name="perm_setup_fsi_title">Show over lock screen</string>
+    <string name="perm_setup_fsi_body">Without this, the alarm screen will not appear over your lock screen when the phone is sleeping. Required on Android 14 and above.</string>
+
+    <string name="perm_setup_battery_title">Unrestricted background use</string>
+    <string name="perm_setup_battery_body">Android can kill WakeIQ to save battery before your alarm fires. Exempting the app from battery optimisation prevents this.</string>
+
+    <string name="perm_setup_dnd_title">Override Do Not Disturb</string>
+    <string name="perm_setup_dnd_body">Without this, your alarm will be silenced if your phone is in Do Not Disturb mode when it fires. Tap Grant and enable it under the Alarm channel.</string>
+
+    <!-- Permission warning banner on home screen -->
+    <string name="perm_banner_title">Alarm may not ring</string>
+    <string name="perm_banner_body">Required permissions are missing.</string>
+    <string name="perm_banner_fix">Fix</string>
+
     <!-- Permissions -->
     <string name="perm_rationale_exact_alarm_title">Exact alarm timing</string>
     <string name="perm_rationale_exact_alarm_body">Without this permission, your alarm may fire several minutes late. Tap \"Allow\" to open Settings and enable exact alarms for WakeIQ.</string>
@@ -120,6 +149,9 @@
     <string name="warm_hue_sage">Sage</string>
     <string name="warm_hue_ocean">Ocean</string>
     <string name="warm_hue_violet">Violet</string>
+
+    <!-- Clock format -->
+    <string name="settings_24_hour_clock">24-hour clock</string>
 
     <!-- Blue light reduction -->
     <string name="blue_light_title">Reduce blue light</string>

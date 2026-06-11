@@ -24,6 +24,9 @@ class AppStateViewModel @Inject constructor(private val prefs: AppPreferences) :
     val warmHueIndex: StateFlow<Int> = prefs.warmHueIndex
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    val use24HourClock: StateFlow<Boolean> = prefs.use24HourClock
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     init {
         viewModelScope.launch {
             prefs.blueLightReductionEnabled.collect { refreshBlueLightState() }
