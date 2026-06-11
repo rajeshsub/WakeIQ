@@ -123,10 +123,11 @@
     <!-- Warm hue / display settings -->
     <string name="warm_hue_title">Alarm card colour</string>
     <string name="warm_hue_none">Default</string>
-    <string name="warm_hue_sand">Sand</string>
     <string name="warm_hue_amber">Amber</string>
     <string name="warm_hue_rose">Rose</string>
-    <string name="warm_hue_lavender">Lavender</string>
+    <string name="warm_hue_sage">Sage</string>
+    <string name="warm_hue_ocean">Ocean</string>
+    <string name="warm_hue_violet">Violet</string>
 
     <!-- Blue light reduction -->
     <string name="blue_light_title">Reduce blue light</string>

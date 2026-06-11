@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wakeiq.data.alarm.AlarmScheduler
+import com.wakeiq.data.audio.AudioPlayer
 import com.wakeiq.data.preferences.AppPreferences
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.domain.model.BundledSound
@@ -14,6 +15,8 @@ import com.wakeiq.domain.repository.AlarmRepository
 import com.wakeiq.domain.usecase.DeleteAlarmUseCase
 import com.wakeiq.domain.usecase.SaveAlarmUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,7 +49,10 @@ class EditAlarmViewModel @Inject constructor(
     private val deleteAlarm: DeleteAlarmUseCase,
     private val scheduler: AlarmScheduler,
     private val prefs: AppPreferences,
+    private val audioPlayer: AudioPlayer,
 ) : ViewModel() {
+
+    private var previewJob: Job? = null
 
     private val alarmId: Long = savedStateHandle.get<Long>("id") ?: -1L
 
@@ -103,8 +109,14 @@ class EditAlarmViewModel @Inject constructor(
 
     fun setLabel(label: String) = _uiState.update { it.copy(label = label) }
 
-    fun setSound(sound: BundledSound) = _uiState.update {
-        it.copy(soundConfig = it.soundConfig.copy(type = SoundType.BUNDLED, bundledSound = sound))
+    fun setSound(sound: BundledSound) {
+        _uiState.update { it.copy(soundConfig = it.soundConfig.copy(type = SoundType.BUNDLED, bundledSound = sound)) }
+        previewJob?.cancel()
+        audioPlayer.playPreview(SoundConfig(type = SoundType.BUNDLED, bundledSound = sound))
+        previewJob = viewModelScope.launch {
+            delay(PREVIEW_DURATION_MS)
+            audioPlayer.release()
+        }
     }
 
     fun setCustomSound(uri: android.net.Uri) = _uiState.update {
@@ -149,5 +161,15 @@ class EditAlarmViewModel @Inject constructor(
             deleteAlarm(alarm)
             _uiState.update { it.copy(savedOrDeleted = true) }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        previewJob?.cancel()
+        audioPlayer.release()
+    }
+
+    companion object {
+        private const val PREVIEW_DURATION_MS = 6_000L
     }
 }

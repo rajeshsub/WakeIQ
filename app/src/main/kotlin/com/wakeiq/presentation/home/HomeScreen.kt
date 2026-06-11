@@ -51,12 +51,17 @@ private val WEEKDAYS = setOf(
 )
 private val WEEKEND = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
 
-private val WarmHueColors = listOf(
-    Color.Unspecified,
-    Color(0xFFFFF3E0),
-    Color(0xFFFFE0B2),
-    Color(0xFFFFCDD2),
-    Color(0xFFE8EAF6),
+private data class CardPalette(val background: Color, val onBackground: Color) {
+    val isCustom get() = background != Color.Unspecified
+}
+
+private val CardPalettes = listOf(
+    CardPalette(Color.Unspecified, Color.Unspecified),
+    CardPalette(Color(0xFFFFFBEB), Color(0xFF92400E)),
+    CardPalette(Color(0xFFFFF1F2), Color(0xFF9F1239)),
+    CardPalette(Color(0xFFECFDF5), Color(0xFF065F46)),
+    CardPalette(Color(0xFFF0F9FF), Color(0xFF075985)),
+    CardPalette(Color(0xFFF5F3FF), Color(0xFF5B21B6)),
 )
 
 @Composable
@@ -69,7 +74,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val warmHueIndex by appState.warmHueIndex.collectAsStateWithLifecycle()
-    val cardColor = WarmHueColors.getOrNull(warmHueIndex) ?: Color.Unspecified
+    val palette = CardPalettes.getOrElse(warmHueIndex) { CardPalettes[0] }
 
     Scaffold(
         topBar = {
@@ -95,7 +100,7 @@ fun HomeScreen(
             is HomeUiState.Success -> AlarmList(
                 alarms = state.alarms,
                 padding = padding,
-                cardColor = cardColor,
+                palette = palette,
                 onToggle = { alarm, enabled -> viewModel.toggle(alarm, enabled) },
                 onTap = { alarm -> onEditAlarm(alarm.id) },
             )
@@ -120,7 +125,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
 private fun AlarmList(
     alarms: List<Alarm>,
     padding: PaddingValues,
-    cardColor: Color,
+    palette: CardPalette,
     onToggle: (Alarm, Boolean) -> Unit,
     onTap: (Alarm) -> Unit,
 ) {
@@ -148,7 +153,7 @@ private fun AlarmList(
         items(alarms, key = { it.id }) { alarm ->
             AlarmCard(
                 alarm = alarm,
-                cardColor = cardColor,
+                palette = palette,
                 onToggle = { enabled -> onToggle(alarm, enabled) },
                 onClick = { onTap(alarm) },
             )
@@ -157,16 +162,24 @@ private fun AlarmList(
 }
 
 @Composable
-private fun AlarmCard(alarm: Alarm, cardColor: Color, onToggle: (Boolean) -> Unit, onClick: () -> Unit) {
-    val colors = if (cardColor != Color.Unspecified) {
-        CardDefaults.cardColors(containerColor = cardColor)
+private fun AlarmCard(alarm: Alarm, palette: CardPalette, onToggle: (Boolean) -> Unit, onClick: () -> Unit) {
+    val cardColors = if (palette.isCustom) {
+        CardDefaults.cardColors(containerColor = palette.background)
     } else {
         CardDefaults.cardColors()
+    }
+    val primaryText = if (palette.isCustom) palette.onBackground else MaterialTheme.colorScheme.onSurface
+    val secondaryText = if (palette.isCustom) {
+        palette.onBackground.copy(
+            alpha = 0.7f,
+        )
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        colors = colors,
+        colors = cardColors,
     ) {
         Row(
             modifier = Modifier
@@ -179,18 +192,19 @@ private fun AlarmCard(alarm: Alarm, cardColor: Color, onToggle: (Boolean) -> Uni
                 Text(
                     text = alarm.timeString,
                     style = MaterialTheme.typography.displayLarge,
+                    color = primaryText,
                 )
                 if (alarm.label.isNotEmpty()) {
                     Text(
                         text = alarm.label,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = secondaryText,
                     )
                 }
                 Text(
                     text = alarm.scheduleDescription(),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = secondaryText,
                 )
             }
             Switch(

@@ -60,17 +60,32 @@ class HomeViewModel @Inject constructor(
         if (prefs.defaultAlarmSeeded.first()) return
         val existing = getAlarms().first()
         if (existing.isEmpty()) {
+            val defaultSound = SoundConfig(type = SoundType.BUNDLED, bundledSound = BundledSound.BIRDS_CHIRPING)
             saveAlarm(
                 Alarm(
                     hour = 6,
-                    minute = 30,
-                    daysOfWeek = DayOfWeek.entries.toSet(),
-                    isEnabled = false,
-                    soundConfig = SoundConfig(
-                        type = SoundType.BUNDLED,
-                        bundledSound = BundledSound.BIRDS_CHIRPING,
+                    minute = 0,
+                    daysOfWeek = setOf(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY,
                     ),
-                    label = "Morning wake",
+                    isEnabled = false,
+                    soundConfig = defaultSound,
+                    label = "Weekdays",
+                    useSmartWake = true,
+                ),
+            )
+            saveAlarm(
+                Alarm(
+                    hour = 7,
+                    minute = 0,
+                    daysOfWeek = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
+                    isEnabled = false,
+                    soundConfig = defaultSound,
+                    label = "Weekends",
                     useSmartWake = true,
                 ),
             )

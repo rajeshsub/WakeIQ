@@ -54,12 +54,13 @@ import com.wakeiq.domain.model.MotionSensitivity
 
 private val KofiButtonColor = Color(0xFFFF5E5B)
 
-private val WarmHueColors = listOf(
+private val CardPaletteBackgrounds = listOf(
     Color.Unspecified,
-    Color(0xFFFFF3E0),
-    Color(0xFFFFE0B2),
-    Color(0xFFFFCDD2),
-    Color(0xFFE8EAF6),
+    Color(0xFFFFFBEB),
+    Color(0xFFFFF1F2),
+    Color(0xFFECFDF5),
+    Color(0xFFF0F9FF),
+    Color(0xFFF5F3FF),
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -165,10 +166,11 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val hueLabels = listOf(
                         stringResource(R.string.warm_hue_none),
-                        stringResource(R.string.warm_hue_sand),
                         stringResource(R.string.warm_hue_amber),
                         stringResource(R.string.warm_hue_rose),
-                        stringResource(R.string.warm_hue_lavender),
+                        stringResource(R.string.warm_hue_sage),
+                        stringResource(R.string.warm_hue_ocean),
+                        stringResource(R.string.warm_hue_violet),
                     )
                     hueLabels.forEachIndexed { index, label ->
                         FilterChip(
@@ -180,7 +182,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                                         modifier = Modifier
                                             .size(12.dp)
                                             .clip(CircleShape)
-                                            .background(WarmHueColors[index]),
+                                            .background(CardPaletteBackgrounds[index]),
                                     )
                                 }
                             } else {

@@ -66,6 +66,18 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         exo.volume = to.coerceIn(0f, 1f)
     }
 
+    fun playPreview(soundConfig: SoundConfig) {
+        release()
+        val uri = resolveUri(soundConfig)
+        player = ExoPlayer.Builder(context).build().also { exo ->
+            exo.setMediaItem(MediaItem.fromUri(uri))
+            exo.repeatMode = Player.REPEAT_MODE_OFF
+            exo.volume = PREVIEW_VOLUME
+            exo.prepare()
+            exo.play()
+        }
+    }
+
     fun release() {
         player?.stop()
         player?.release()
@@ -85,6 +97,7 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
 
     companion object {
         private const val VOLUME_RAMP_STEPS = 100
+        private const val PREVIEW_VOLUME = 0.6f
         const val WHISPER_VOLUME = 0.15f
         const val WHISPER_PHASE_MS = 120_000L
         const val ESCALATION_PHASE_MS = 180_000L
