@@ -69,7 +69,6 @@
     <string name="settings_default_ramp">Default wake duration</string>
     <string name="settings_default_sensitivity">Default sensitivity</string>
     <string name="settings_snooze_duration">Snooze duration</string>
-    <string name="settings_reset_donation_prompt">Reset donation prompt</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %s</string>
     <string name="settings_source_code">Source code (GitHub)</string>
@@ -89,13 +88,6 @@
     <string name="perm_open_settings">Open Settings</string>
     <string name="perm_skip">Skip (disables this feature)</string>
     <string name="perm_allow">Allow</string>
-
-    <!-- Donation -->
-    <string name="donation_title">WakeIQ is free, forever</string>
-    <string name="donation_body">No ads, no tracking, open source. If it helps you wake up refreshed, consider supporting development.</string>
-    <string name="donation_liberapay">Support on Liberapay</string>
-    <string name="donation_kofi">Buy me a coffee (Ko-fi)</string>
-    <string name="donation_dismiss">No thanks</string>
 
     <!-- Notifications -->
     <string name="notif_channel_alarm_name">Alarm</string>
@@ -143,8 +135,7 @@
     <string name="about_gradual_wake_body">Your alarm never blares suddenly. Sound begins at barely a whisper, then gently rises over the first two minutes. By five minutes it reaches full volume and stays there.\n\nIf you sleep through it, WakeIQ keeps trying; automatically switching to a different sound every two minutes so your brain gets a fresh signal. No sudden shock. Just a persistent, ever-louder nudge toward waking.</string>
     <string name="about_privacy_title">Your data stays on your phone, always</string>
     <string name="about_privacy_body">WakeIQ never collects, records, or sells any data about you. No analytics. No usage tracking. No telemetry. No silent background uploads. Everything the app knows about you (your alarms, your preferences, your sleep patterns) lives only on your device and never goes anywhere.</string>
-    <string name="about_description">WakeIQ is genuinely free, open-source software released under the MIT License. There is no catch, no premium tier, and no upsell, ever. You are never expected to pay. If it makes your mornings better and you feel like spreading a little joy, a donation is warmly welcome. But truly only if you want to.</string>
-    <string name="about_kofi_button">Buy me a coffee ☕</string>
+    <string name="about_description">WakeIQ is genuinely free, open-source software released under the MIT License. There is no catch, no premium tier, and no upsell, ever. You are never expected to pay.</string>
     <string name="about_mit_badge">MIT License · free forever · no ads · no tracking · no data collection</string>
     <string name="about_github_button">View source on GitHub</string>
 </resources>

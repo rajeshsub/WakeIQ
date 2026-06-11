@@ -69,9 +69,7 @@ No proprietary hardware required. The accelerometer already in your phone is suf
 
 **We will never sell, share, or monetise your information.** There is nothing to sell. The app has no analytics SDK, no advertising SDK, and no third-party data pipeline of any kind.
 
-**You are never expected to pay.** If WakeIQ helps you wake up better, that's the entire point. A one-time optional donation keeps the lights on for development, but it is entirely your choice and you will never be pestered about it.
-
-If you'd like to say thanks: [Buy me a coffee on Ko-fi](https://ko-fi.com/wakeiq)
+**You are never expected to pay.** If WakeIQ helps you wake up better, that's the entire point.
 
 ---
 

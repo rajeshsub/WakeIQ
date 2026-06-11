@@ -61,8 +61,4 @@ class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) :
     fun setWarmHueIndex(index: Int) = viewModelScope.launch {
         prefs.setWarmHueIndex(index)
     }
-
-    fun resetDonationPrompt() = viewModelScope.launch {
-        prefs.resetDonationPrompt()
-    }
 }

@@ -36,12 +36,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     val defaultSnoozeMinutes: Flow<Int> =
         store.data.map { it[KEY_SNOOZE_DURATION] ?: DEFAULT_SNOOZE_MINUTES }
 
-    val donationPromptShown: Flow<Boolean> =
-        store.data.map { it[KEY_DONATION_SHOWN] ?: false }
-
-    val donationPromptSuppressed: Flow<Boolean> =
-        store.data.map { it[KEY_DONATION_SUPPRESSED] ?: false }
-
     val blueLightReductionEnabled: Flow<Boolean> =
         store.data.map { it[KEY_BLUE_LIGHT_REDUCTION] ?: true }
 
@@ -67,21 +61,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         store.edit { it[KEY_SNOOZE_DURATION] = minutes }
     }
 
-    suspend fun markDonationPromptShown() {
-        store.edit { it[KEY_DONATION_SHOWN] = true }
-    }
-
-    suspend fun suppressDonationPrompt() {
-        store.edit { it[KEY_DONATION_SUPPRESSED] = true }
-    }
-
-    suspend fun resetDonationPrompt() {
-        store.edit {
-            it.remove(KEY_DONATION_SHOWN)
-            it.remove(KEY_DONATION_SUPPRESSED)
-        }
-    }
-
     suspend fun setBlueLightReduction(enabled: Boolean) {
         store.edit { it[KEY_BLUE_LIGHT_REDUCTION] = enabled }
     }
@@ -103,8 +82,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val KEY_RAMP_DURATION = intPreferencesKey("ramp_duration_minutes")
         val KEY_MOTION_SENSITIVITY = intPreferencesKey("motion_sensitivity")
         val KEY_SNOOZE_DURATION = intPreferencesKey("snooze_duration_minutes")
-        val KEY_DONATION_SHOWN = booleanPreferencesKey("donation_prompt_shown")
-        val KEY_DONATION_SUPPRESSED = booleanPreferencesKey("donation_prompt_suppressed")
         val KEY_BLUE_LIGHT_REDUCTION = booleanPreferencesKey("blue_light_reduction_enabled")
         val KEY_WARM_HUE_INDEX = intPreferencesKey("warm_hue_index")
         val KEY_DEFAULT_ALARM_SEEDED = booleanPreferencesKey("default_alarm_seeded")

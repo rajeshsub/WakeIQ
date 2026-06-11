@@ -19,8 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -51,8 +49,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeiq.R
 import com.wakeiq.domain.model.MotionSensitivity
-
-private val KofiButtonColor = Color(0xFFFF5E5B)
 
 private val CardPaletteBackgrounds = listOf(
     Color.Unspecified,
@@ -253,18 +249,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Button(
-                onClick = {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, "https://ko-fi.com/wakeiq".toUri()),
-                    )
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = KofiButtonColor),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.about_kofi_button))
-            }
-
             OutlinedButton(
                 onClick = {
                     context.startActivity(
@@ -277,12 +261,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.about_github_button))
-            }
-
-            HorizontalDivider()
-
-            TextButton(onClick = viewModel::resetDonationPrompt) {
-                Text(stringResource(R.string.settings_reset_donation_prompt))
             }
         }
     }
