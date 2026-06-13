@@ -18,7 +18,7 @@ This isn't a minor inconvenience. Research consistently shows that waking during
 
 Most alarm apps do one thing: fire at a fixed time, at full volume, regardless of what
 your body is doing. If you happen to be in deep sleep, you get yanked out of it hard.
-The result is sleep inertia - that thick, foggy, exhausted feeling that can persist for
+The result is sleep inertia: a thick, foggy, exhausted feeling that can persist for
 30 minutes or more after waking, and in some cases for up to four hours.
 
 WakeIQ's approach is grounded in six decades of peer-reviewed sleep science. The gradual
@@ -29,8 +29,8 @@ sound ramp is not a cosmetic feature. It is the mechanism.
 Your brain's sensitivity to sound during sleep is not constant. It varies dramatically
 and predictably with sleep stage.
 
-Auditory arousal thresholds (AATs) - the minimum sound intensity required to rouse a
-sleeper - have been studied consistently since the 1960s. The findings have been
+Auditory arousal thresholds (AATs), the minimum sound intensity required to rouse a
+sleeper, have been studied consistently since the 1960s. The findings have been
 replicated many times and are not in dispute:
 
 - **AATs increase progressively as NREM sleep deepens** from stage N1 through N2 to
@@ -104,7 +104,7 @@ The gradual ramp exploits auditory arousal threshold variation passively:
 
 You will always wake on time. If you remain in a lighter stage through the entire ramp,
 the sound reaches full volume by your hard deadline. You do not need to be in any
-particular sleep stage for this to work - the mechanism operates regardless.
+particular sleep stage for this to work. The mechanism operates regardless.
 
 ### Sound choice matters too
 
@@ -117,7 +117,7 @@ perceived sleep inertia, while neutral sounds (neither melodic nor unmelodic) sh
 significant relationship to *increases* in perceived sleep inertia.
 
 A subsequent 2020 study (McFarlane et al., PLoS ONE) extended this finding, examining
-the specific musical elements - melody and rhythm - that drive the effect.
+the specific musical elements (melody and rhythm) that drive the effect.
 
 Sources:
 - McFarlane S.J. et al. (2020). Alarm tones, music and their elements: Analysis of
@@ -128,7 +128,7 @@ Sources:
   the effect of melody and rhythm in an ecological context. *PMC7445849*.
   [PMC: PMC7445849](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7445849/)
 
-The bundled sounds in WakeIQ - birdsong, rain, singing bowl, piano melody - are chosen
+The bundled sounds in WakeIQ (birdsong, rain, singing bowl, piano melody) are chosen
 to be melodic and natural rather than harsh and repetitive. You can also choose any
 audio file from your device. Familiar, meaningful sounds work particularly well: the
 sleeping brain's arousal threshold in REM responds to stimulus meaningfulness (see
@@ -156,7 +156,7 @@ trigger, never as the primary mechanism.
 
 - Recurring alarms by day of week, or one-shot
 - Smart window: configurable width (10-30 min, default 20 min)
-- Gradual sound ramp: configurable duration (5-30 min, default 15 min) - the primary
+- Gradual sound ramp: configurable duration (5-30 min, default 15 min), the primary
   wake mechanism, grounded in auditory arousal threshold science
 - Screen brightness ramps from 0% to 100% alongside the sound
 - Motion sensitivity: Low / Medium / High (Wear OS wrist detection or on-mattress phone
@@ -236,7 +236,7 @@ The signed release APK is built automatically by the [release workflow](.github/
 |-------|-----------|
 | Language | Kotlin |
 | UI | Jetpack Compose + Material 3 |
-| DI | Hilt |
+| Dependency Injection | Hilt |
 | Database | Room |
 | Audio | Media3 / ExoPlayer |
 | Async | Coroutines + Flow |
