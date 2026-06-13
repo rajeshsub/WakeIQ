@@ -1,36 +1,48 @@
-WakeIQ wakes you up gently and refreshed by working with your natural sleep cycles, not against them.
+WakeIQ wakes you gently by exploiting a well-documented property of human sleep:
+your brain's sensitivity to sound varies dramatically with sleep stage. During deep
+slow-wave sleep (N3), auditory arousal thresholds are high - quiet sounds go completely
+unnoticed. During light sleep (N1, N2) and REM, thresholds are significantly lower and
+moderate sound is sufficient to rouse you. WakeIQ's gradual ramp starts below the
+threshold of any sleep stage and rises slowly. It passes unnoticed through deep sleep
+and reaches you naturally when you surface into a lighter phase.
 
-Most alarms jolt you out of deep sleep (slow-wave or N3 stage), causing sleep inertia — that heavy, groggy feeling that can last for hours. WakeIQ is different.
+This is grounded in peer-reviewed science: Williams et al. (1964), Rechtschaffen et al.
+(1966), and replicated consistently since. Waking from deep sleep causes sleep inertia -
+fMRI studies show a 41% reduction in cognitive performance vs waking from light sleep
+(Vallat et al. 2019; Hilditch and McHill 2019). WakeIQ addresses the cause. Full
+citations are in the README at https://github.com/rajeshsub/WakeIQ
+
+The bundled sounds are melodic and natural by design. A 2020 PLoS ONE study (McFarlane
+et al., doi:10.1371/journal.pone.0215788) found melodic alarm sounds reduce perceived
+sleep inertia compared to neutral tones.
 
 HOW IT WORKS
 
-Your sleep naturally cycles through light and deep stages roughly every 90 minutes. WakeIQ monitors your movement using your phone's built-in accelerometer. More movement means lighter sleep. When you enter a light sleep phase within a configurable window before your alarm time, WakeIQ gently begins waking you — instead of shocking you awake from deep sleep.
+Set a wake time and smart window (default 20 min, configurable 10-30 min). WakeIQ
+starts a sound ramp at a barely audible level and raises it slowly over a configurable
+duration (5-30 min). During deep sleep it goes unnoticed. When you cycle into a lighter
+stage your arousal threshold drops and the sound wakes you smoothly. If you stay in
+deep sleep through the window, the ramp reaches full volume at your hard deadline. You
+always wake on time.
 
-Even if you sleep deeply right through the window, the alarm still goes off on time. But instead of blaring at full volume, sound and screen brightness gradually ramp up over a configurable period (5–30 minutes), giving your body a natural, gentle transition from sleep to wakefulness.
+Paired with a Wear OS watch: wrist accelerometer data can trigger the ramp slightly
+earlier if light-sleep movement is detected, giving you an even softer start. This is
+an optional enhancement. The ramp works fully without a watch.
 
-FEATURES
+SOUNDS
 
-• Smart wake window: set a 10–30 minute window; alarm fires early if light sleep detected
-• Gradual sound ramp: volume increases slowly from silence to your chosen level
-• Gradual screen brightening: room fills with light naturally, simulating sunrise
-• 12 bundled sounds: birds, rain, thunderstorm, ocean waves, farm animals, rooster, train station, airport, café, office, piano melody, singing bowl
-• Custom sounds: use any audio file from your device
-• Full alarm scheduling: one-shot or recurring by day of week
-• Snooze support with configurable duration
-• Per-alarm settings: sensitivity, ramp duration, smart window
+21 bundled sounds across four categories: Nature, Farm, Music, and Ambient Places.
+Custom audio from your device is also supported. Snooze is included.
 
-PRIVACY AND OPENNESS
+PRIVACY
 
-• No ads, ever
-• No tracking or analytics
-• No internet permission required for core function
-• Fully open source (MIT license)
-• F-Droid compatible
+WakeIQ collects no personal data of any kind. No analytics. No crash telemetry. No
+sensor data leaves your device. No remote servers. No accounts. Nothing is ever
+transmitted anywhere. Your sleep patterns, alarm schedule, and habits are yours alone.
+There is no data to sell because none is collected.
 
-PERMISSIONS EXPLAINED
+FREE AND OPEN SOURCE
 
-Every permission is explained in plain English before it is requested. You can deny any permission — the app will tell you exactly what feature is affected.
-
-FREE FOREVER
-
-WakeIQ is and will always be completely free. If it helps you wake up refreshed, you are welcome (never pressured) to support development via Liberapay or Ko-fi.
+Free forever. No ads. No subscription. No locked features. MIT licensed. Source code
+is available at https://github.com/rajeshsub/WakeIQ. Donations are welcome but never
+expected.

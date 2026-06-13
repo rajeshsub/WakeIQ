@@ -17,12 +17,14 @@ class AlarmReceiver : BroadcastReceiver() {
             Timber.e("AlarmReceiver received intent with no alarm ID")
             return
         }
-        Timber.d("Alarm receiver fired for alarm $alarmId")
-        AlarmForegroundService.start(context, alarmId)
+        val isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false)
+        Timber.d("Alarm receiver fired for alarm $alarmId (snooze=$isSnooze)")
+        AlarmForegroundService.start(context, alarmId, isSnooze)
     }
 
     companion object {
         const val ACTION_FIRE = "com.wakeiq.ACTION_FIRE_ALARM"
         const val EXTRA_ALARM_ID = "extra_alarm_id"
+        const val EXTRA_IS_SNOOZE = "extra_is_snooze"
     }
 }

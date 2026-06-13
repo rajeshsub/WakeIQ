@@ -90,14 +90,11 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
 
     private fun resolveUri(soundConfig: SoundConfig): Uri = when (soundConfig.type) {
         SoundType.CUSTOM ->
-            soundConfig.customUri ?: rawUri(BundledSound.BIRDS_CHIRPING.resourceName)
-        SoundType.BUNDLED -> rawUri(soundConfig.bundledSound.resourceName)
+            soundConfig.customUri ?: assetUri(BundledSound.BIRDS_LIGHT_RAIN.assetFile)
+        SoundType.BUNDLED -> assetUri(soundConfig.bundledSound.assetFile)
     }
 
-    private fun rawUri(resourceName: String): Uri {
-        val resId = context.resources.getIdentifier(resourceName, "raw", context.packageName)
-        return Uri.parse("android.resource://${context.packageName}/$resId")
-    }
+    private fun assetUri(assetFile: String): Uri = Uri.parse("asset:///sounds/$assetFile")
 
     private fun alarmAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
         .setUsage(C.USAGE_ALARM)

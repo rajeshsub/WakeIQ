@@ -9,14 +9,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,8 +48,8 @@ fun AlarmScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var brightness by remember { mutableFloatStateOf(0f) }
+    var showDismissDialog by remember { mutableStateOf(false) }
 
-    // Ramp screen brightness
     val windowView = LocalView.current
     LaunchedEffect(rampDurationMs) {
         val steps = BRIGHTNESS_RAMP_STEPS
@@ -65,6 +68,27 @@ fun AlarmScreen(
         window.attributes = finalParams
     }
 
+    if (showDismissDialog) {
+        AlertDialog(
+            onDismissRequest = { showDismissDialog = false },
+            title = { Text(stringResource(R.string.alarm_dismiss_confirm_title)) },
+            text = { Text(stringResource(R.string.alarm_dismiss_confirm_body)) },
+            confirmButton = {
+                Button(onClick = {
+                    showDismissDialog = false
+                    onDismiss()
+                }) {
+                    Text(stringResource(R.string.alarm_dismiss_confirm_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDismissDialog = false }) {
+                    Text(stringResource(R.string.alarm_dismiss_confirm_no))
+                }
+            },
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -76,10 +100,13 @@ fun AlarmScreen(
             verticalArrangement = Arrangement.spacedBy(32.dp),
             modifier = Modifier.padding(32.dp),
         ) {
-            // Current time
-            val currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
+            val formatter = if (uiState.is24Hour) {
+                DateTimeFormatter.ofPattern("HH:mm")
+            } else {
+                DateTimeFormatter.ofPattern("h:mm a")
+            }
             Text(
-                text = currentTime,
+                text = LocalTime.now().format(formatter),
                 fontSize = 80.sp,
                 fontWeight = FontWeight.Light,
                 color = Color.White,
@@ -104,7 +131,7 @@ fun AlarmScreen(
                     Text(stringResource(R.string.alarm_snooze, uiState.snoozeMinutes))
                 }
                 Button(
-                    onClick = onDismiss,
+                    onClick = { showDismissDialog = true },
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(stringResource(R.string.alarm_dismiss))

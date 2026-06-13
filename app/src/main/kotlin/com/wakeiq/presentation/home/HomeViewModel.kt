@@ -66,7 +66,7 @@ class HomeViewModel @Inject constructor(
         if (prefs.defaultAlarmSeeded.first()) return
         val existing = getAlarms().first()
         if (existing.isEmpty()) {
-            val defaultSound = SoundConfig(type = SoundType.BUNDLED, bundledSound = BundledSound.BIRDS_CHIRPING)
+            val defaultSound = SoundConfig(type = SoundType.BUNDLED, bundledSound = BundledSound.BIRDS_LIGHT_RAIN)
             saveAlarm(
                 Alarm(
                     hour = 6,

@@ -38,7 +38,8 @@ data class AlarmEntity(
         isEnabled = isEnabled,
         soundConfig = SoundConfig(
             type = SoundType.valueOf(soundType),
-            bundledSound = BundledSound.valueOf(bundledSoundName),
+            bundledSound = runCatching { BundledSound.valueOf(bundledSoundName) }
+                .getOrDefault(BundledSound.BIRDS_LIGHT_RAIN),
             customUri = customUri?.let { android.net.Uri.parse(it) },
             peakVolume = peakVolume,
         ),

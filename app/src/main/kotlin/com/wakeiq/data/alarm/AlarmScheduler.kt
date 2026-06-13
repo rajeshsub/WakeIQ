@@ -34,19 +34,31 @@ class AlarmScheduler @Inject constructor(
             triggerAt
         }
 
-        val intent = buildAlarmIntent(alarm.id)
-        val clockInfo = AlarmManager.AlarmClockInfo(
-            scheduledAt.toInstant().toEpochMilli(),
-            intent,
-        )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+        if (!canScheduleExactAlarms()) {
             Timber.w("Exact alarm permission not granted for alarm ${alarm.id}")
             return
         }
 
-        alarmManager.setAlarmClock(clockInfo, intent)
+        val intent = buildAlarmIntent(alarm.id)
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(scheduledAt.toInstant().toEpochMilli(), intent),
+            intent,
+        )
         Timber.i("Scheduled alarm ${alarm.id} at $scheduledAt (target: $triggerAt)")
+    }
+
+    fun scheduleSnooze(alarm: Alarm) {
+        if (!canScheduleExactAlarms()) {
+            Timber.w("Exact alarm permission not granted, cannot schedule snooze for alarm ${alarm.id}")
+            return
+        }
+        val triggerAt = ZonedDateTime.now().plusMinutes(alarm.snoozeMinutes.toLong())
+        val intent = buildSnoozeIntent(alarm.id)
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(triggerAt.toInstant().toEpochMilli(), intent),
+            intent,
+        )
+        Timber.i("Scheduled snooze for alarm ${alarm.id} at $triggerAt")
     }
 
     fun cancel(alarmId: Long) {
@@ -65,5 +77,23 @@ class AlarmScheduler @Inject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+    }
+
+    private fun buildSnoozeIntent(alarmId: Long): PendingIntent {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_FIRE
+            putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
+            putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, true)
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            (alarmId + SNOOZE_REQUEST_CODE_OFFSET).toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    companion object {
+        private const val SNOOZE_REQUEST_CODE_OFFSET = 10_000
     }
 }

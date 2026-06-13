@@ -266,40 +266,26 @@ fun EditAlarmScreen(
             // Sound picker
             Text(stringResource(R.string.sound_picker_title), style = MaterialTheme.typography.titleMedium)
 
-            Text(
-                stringResource(R.string.sound_category_nature),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BundledSound.entries
-                    .filter { it.category == SoundCategory.NATURE }
-                    .forEach { sound ->
-                        FilterChip(
-                            selected = uiState.soundConfig.type == SoundType.BUNDLED &&
-                                uiState.soundConfig.bundledSound == sound,
-                            onClick = { viewModel.setSound(sound) },
-                            label = { Text(stringResource(sound.displayNameRes)) },
-                        )
-                    }
-            }
-
-            Text(
-                stringResource(R.string.sound_category_ambient),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BundledSound.entries
-                    .filter { it.category == SoundCategory.AMBIENT }
-                    .forEach { sound ->
-                        FilterChip(
-                            selected = uiState.soundConfig.type == SoundType.BUNDLED &&
-                                uiState.soundConfig.bundledSound == sound,
-                            onClick = { viewModel.setSound(sound) },
-                            label = { Text(stringResource(sound.displayNameRes)) },
-                        )
-                    }
+            SoundCategory.entries.forEach { category ->
+                Text(
+                    stringResource(category.displayNameRes),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BundledSound.entries
+                        .filter { it.category == category }
+                        .forEach { sound ->
+                            key(sound) {
+                                FilterChip(
+                                    selected = uiState.soundConfig.type == SoundType.BUNDLED &&
+                                        uiState.soundConfig.bundledSound == sound,
+                                    onClick = { viewModel.setSound(sound) },
+                                    label = { Text(stringResource(sound.displayNameRes)) },
+                                )
+                            }
+                        }
+                }
             }
 
             TextButton(

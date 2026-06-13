@@ -6,10 +6,11 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.wakeiq.R
+import com.wakeiq.data.alarm.AlarmScheduler
 import com.wakeiq.data.audio.AudioPlayer
 import com.wakeiq.data.sensor.MotionDetector
 import com.wakeiq.domain.model.Alarm
@@ -28,6 +29,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
+@Suppress("TooManyFunctions")
 class AlarmForegroundService : Service() {
 
     @Inject lateinit var alarmRepository: AlarmRepository
@@ -36,8 +38,11 @@ class AlarmForegroundService : Service() {
 
     @Inject lateinit var audioPlayer: AudioPlayer
 
+    @Inject lateinit var alarmScheduler: AlarmScheduler
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var currentAlarmId: Long = -1L
+    private var currentAlarm: Alarm? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -49,9 +54,10 @@ class AlarmForegroundService : Service() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
+                val isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false)
                 currentAlarmId = alarmId
                 startForeground(NOTIFICATION_ID, buildLoadingNotification())
-                loadAndStartAlarm(alarmId)
+                loadAndStartAlarm(alarmId, isSnooze)
             }
             ACTION_DISMISS -> dismissAlarm()
             ACTION_SNOOZE -> snoozeAlarm()
@@ -59,23 +65,27 @@ class AlarmForegroundService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun loadAndStartAlarm(alarmId: Long) {
+    private fun loadAndStartAlarm(alarmId: Long, isSnooze: Boolean) {
         scope.launch {
             val alarm = alarmRepository.getById(alarmId) ?: run {
                 Timber.e("Alarm $alarmId not found")
                 stopSelf()
                 return@launch
             }
-            startSmartWindow(alarm)
+            currentAlarm = alarm
+            if (isSnooze) {
+                updateWaitingNotification(alarm)
+                triggerEscalation(alarm)
+            } else {
+                startSmartWindow(alarm)
+            }
         }
     }
 
     private fun startSmartWindow(alarm: Alarm) {
         scope.launch {
             val windowMs = alarm.smartWindowMinutes * MILLIS_PER_MINUTE
-
-            updateNotification(alarm)
-
+            updateWaitingNotification(alarm)
             motionDetector.startDetection(alarm.motionSensitivity)
 
             val motionJob = launch {
@@ -96,22 +106,18 @@ class AlarmForegroundService : Service() {
     private fun triggerEscalation(alarm: Alarm) {
         motionDetector.stopDetection()
         Timber.i("Triggering alarm escalation for alarm ${alarm.id}")
-
+        updateEscalationNotification(alarm)
         audioPlayer.prepare(alarm.soundConfig)
         audioPlayer.play()
 
-        // Gradual escalation: whisper for 2 min, ramp to full over next 3 min
         scope.launch(Dispatchers.IO) {
             audioPlayer.escalateVolume(alarm.soundConfig.peakVolume)
         }
 
-        // After reaching full volume, cycle sounds every 2 min to break through deep sleep
         scope.launch {
             delay(SOUND_SWITCH_START_MS)
             cycleSounds(alarm)
         }
-
-        showAlarmActivity(alarm)
     }
 
     private suspend fun cycleSounds(alarm: Alarm) {
@@ -129,15 +135,6 @@ class AlarmForegroundService : Service() {
             }
     }
 
-    private fun showAlarmActivity(alarm: Alarm) {
-        val alarmIntent = Intent(this, AlarmActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(AlarmActivity.EXTRA_ALARM_ID, alarm.id)
-            putExtra(AlarmActivity.EXTRA_RAMP_DURATION_MS, alarm.rampDurationMinutes * MILLIS_PER_MINUTE)
-        }
-        startActivity(alarmIntent)
-    }
-
     private fun dismissAlarm() {
         Timber.i("Alarm dismissed")
         motionDetector.stopDetection()
@@ -147,9 +144,13 @@ class AlarmForegroundService : Service() {
     }
 
     private fun snoozeAlarm() {
+        val alarm = currentAlarm
         Timber.i("Alarm snoozed for alarm $currentAlarmId")
         motionDetector.stopDetection()
         audioPlayer.release()
+        if (alarm != null) {
+            alarmScheduler.scheduleSnooze(alarm)
+        }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -168,7 +169,7 @@ class AlarmForegroundService : Service() {
         .setPriority(NotificationCompat.PRIORITY_MAX)
         .build()
 
-    private fun updateNotification(alarm: Alarm) {
+    private fun updateWaitingNotification(alarm: Alarm) {
         val label = alarm.label.ifEmpty { alarm.timeString }
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -178,38 +179,61 @@ class AlarmForegroundService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setFullScreenIntent(buildFullScreenIntent(alarm.id), true)
-            .addAction(buildDismissAction())
             .build()
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
     }
 
-    private fun buildFullScreenIntent(alarmId: Long): PendingIntent {
+    private fun updateEscalationNotification(alarm: Alarm) {
+        val label = alarm.label.ifEmpty { alarm.timeString }
+        val activityPi = buildAlarmActivityIntent(alarm)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(getString(R.string.notif_alarm_title))
+            .setContentText(label)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(activityPi)
+            .setFullScreenIntent(activityPi, true)
+            .addAction(buildSnoozeAction())
+            .addAction(buildDismissAction())
+            .build()
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun buildAlarmActivityIntent(alarm: Alarm): PendingIntent {
         val intent = Intent(this, AlarmActivity::class.java).apply {
-            putExtra(AlarmActivity.EXTRA_ALARM_ID, alarmId)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(AlarmActivity.EXTRA_ALARM_ID, alarm.id)
+            putExtra(AlarmActivity.EXTRA_RAMP_DURATION_MS, alarm.rampDurationMinutes * MILLIS_PER_MINUTE)
         }
         return PendingIntent.getActivity(
             this,
-            alarmId.toInt(),
+            alarm.id.toInt(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
     private fun buildDismissAction(): NotificationCompat.Action {
-        val dismissIntent = Intent(this, AlarmForegroundService::class.java).apply {
-            action = ACTION_DISMISS
-        }
         val pi = PendingIntent.getService(
             this,
-            0,
-            dismissIntent,
+            REQUEST_CODE_DISMISS,
+            Intent(this, AlarmForegroundService::class.java).apply { action = ACTION_DISMISS },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Action(0, getString(R.string.notif_alarm_dismiss), pi)
+    }
+
+    private fun buildSnoozeAction(): NotificationCompat.Action {
+        val pi = PendingIntent.getService(
+            this,
+            REQUEST_CODE_SNOOZE,
+            Intent(this, AlarmForegroundService::class.java).apply { action = ACTION_SNOOZE },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Action(0, getString(R.string.notif_alarm_snooze), pi)
     }
 
     companion object {
@@ -219,44 +243,38 @@ class AlarmForegroundService : Service() {
         const val ACTION_DISMISS = "com.wakeiq.action.DISMISS_ALARM"
         const val ACTION_SNOOZE = "com.wakeiq.action.SNOOZE_ALARM"
         const val EXTRA_ALARM_ID = "extra_alarm_id"
+        const val EXTRA_IS_SNOOZE = "extra_is_snooze"
         private const val MILLIS_PER_MINUTE = 60_000L
-
-        // Total escalation time = WHISPER_PHASE_MS + ESCALATION_PHASE_MS from AudioPlayer
         private const val SOUND_SWITCH_START_MS = 300_000L
         private const val SOUND_SWITCH_INTERVAL_MS = 120_000L
+        private const val REQUEST_CODE_DISMISS = 2001
+        private const val REQUEST_CODE_SNOOZE = 2002
 
         private val FALLBACK_SOUND_ROTATION = listOf(
-            BundledSound.ROOSTER,
+            BundledSound.MORNING_ROOSTERS,
             BundledSound.THUNDERSTORM,
-            BundledSound.SINGING_BOWL,
+            BundledSound.INDIAN_HARP,
             BundledSound.TRAIN_STATION,
         )
 
-        fun start(context: Context, alarmId: Long) {
+        fun start(context: Context, alarmId: Long, isSnooze: Boolean = false) {
             val intent = Intent(context, AlarmForegroundService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_ALARM_ID, alarmId)
+                putExtra(EXTRA_IS_SNOOZE, isSnooze)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            ContextCompat.startForegroundService(context, intent)
         }
 
         fun dismiss(context: Context) {
             context.startService(
-                Intent(context, AlarmForegroundService::class.java).apply {
-                    action = ACTION_DISMISS
-                },
+                Intent(context, AlarmForegroundService::class.java).apply { action = ACTION_DISMISS },
             )
         }
 
         fun snooze(context: Context) {
             context.startService(
-                Intent(context, AlarmForegroundService::class.java).apply {
-                    action = ACTION_SNOOZE
-                },
+                Intent(context, AlarmForegroundService::class.java).apply { action = ACTION_SNOOZE },
             )
         }
     }

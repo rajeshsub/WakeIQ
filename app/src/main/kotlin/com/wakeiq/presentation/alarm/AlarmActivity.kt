@@ -1,5 +1,7 @@
 package com.wakeiq.presentation.alarm
 
+import android.app.KeyguardManager
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -15,6 +17,12 @@ class AlarmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+            getSystemService(KeyguardManager::class.java).requestDismissKeyguard(this, null)
+        }
 
         @Suppress("DEPRECATION")
         window.addFlags(

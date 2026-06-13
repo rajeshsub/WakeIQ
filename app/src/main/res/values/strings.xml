@@ -44,24 +44,49 @@
     <!-- Sound picker -->
     <string name="sound_picker_title">Alarm sound</string>
     <string name="sound_custom">Custom…</string>
-    <string name="sound_birds_chirping">Birds chirping</string>
-    <string name="sound_rain">Gentle rain</string>
+
+    <!-- Nature &amp; Weather -->
+    <string name="sound_birds_light_rain">Birds &amp; light rain</string>
+    <string name="sound_forest_birds">Forest birdsong</string>
+    <string name="sound_ocean_coast">Ocean coast</string>
+    <string name="sound_stream">Bubbling stream</string>
+    <string name="sound_city_rain">Steady city rain</string>
     <string name="sound_thunderstorm">Thunderstorm</string>
-    <string name="sound_ocean_waves">Ocean waves</string>
-    <string name="sound_farm_animals">Farm animals</string>
-    <string name="sound_rooster">Rooster</string>
-    <string name="sound_train_station">Train station</string>
+
+    <!-- Farm &amp; Animals -->
+    <string name="sound_sheep_horses_dogs">Sheep, horses &amp; dogs</string>
+    <string name="sound_crickets_night">Crickets at night</string>
+    <string name="sound_morning_roosters">Morning roosters</string>
+    <string name="sound_cows">Mournful cows</string>
+    <string name="sound_summer_field">Summer field at dusk</string>
+
+    <!-- Music &amp; Melodies -->
+    <string name="sound_vaquero">Lament of the Vaquero</string>
+    <string name="sound_music_box">Music box</string>
+    <string name="sound_piano">Piano</string>
+    <string name="sound_indian_harp">Indian harp</string>
+    <string name="sound_wind_chimes">Wind chimes</string>
+
+    <!-- Ambient Places -->
+    <string name="sound_cafe">Café</string>
     <string name="sound_airport">Airport terminal</string>
-    <string name="sound_cafe">Café ambience</string>
-    <string name="sound_office">Office morning</string>
-    <string name="sound_piano_melody">Piano melody</string>
-    <string name="sound_singing_bowl">Singing bowl</string>
-    <string name="sound_category_nature">Nature</string>
-    <string name="sound_category_ambient">Ambient</string>
+    <string name="sound_busy_street">Busy street</string>
+    <string name="sound_office">Office</string>
+    <string name="sound_train_station">Train station</string>
+
+    <!-- Sound categories -->
+    <string name="sound_category_nature">Nature &amp; Weather</string>
+    <string name="sound_category_farm">Farm &amp; Animals</string>
+    <string name="sound_category_music">Music &amp; Melodies</string>
+    <string name="sound_category_places">Ambient Places</string>
 
     <!-- Alarm firing screen -->
     <string name="alarm_dismiss">Dismiss</string>
     <string name="alarm_snooze">Snooze %d min</string>
+    <string name="alarm_dismiss_confirm_title">Dismiss alarm?</string>
+    <string name="alarm_dismiss_confirm_body">Are you sure? The alarm will not ring again until its next scheduled time.</string>
+    <string name="alarm_dismiss_confirm_yes">Yes, dismiss</string>
+    <string name="alarm_dismiss_confirm_no">Keep ringing</string>
 
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
