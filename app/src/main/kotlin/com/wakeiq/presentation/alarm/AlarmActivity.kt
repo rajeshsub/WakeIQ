@@ -56,6 +56,6 @@ class AlarmActivity : ComponentActivity() {
     companion object {
         const val EXTRA_ALARM_ID = "extra_alarm_id"
         const val EXTRA_RAMP_DURATION_MS = "extra_ramp_duration_ms"
-        private const val DEFAULT_RAMP_MS = 15L * 60_000L
+        private const val DEFAULT_RAMP_MS = 5L * 60_000L
     }
 }

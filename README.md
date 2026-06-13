@@ -94,7 +94,7 @@ The gradual ramp exploits auditory arousal threshold variation passively:
 
 1. The ramp starts at a barely audible level, well below the arousal threshold of any
    sleep stage including the lightest.
-2. Volume rises slowly over the configured duration (5-30 minutes).
+2. Volume rises slowly over the configured duration (1-15 minutes).
 3. While you are in N3, the sound is below your brain's arousal threshold. It passes
    unnoticed. You are not disrupted and you do not wake.
 4. As you naturally cycle into a lighter stage (N1, N2, or REM) your arousal threshold
@@ -105,6 +105,15 @@ The gradual ramp exploits auditory arousal threshold variation passively:
 You will always wake on time. If you remain in a lighter stage through the entire ramp,
 the sound reaches full volume by your hard deadline. You do not need to be in any
 particular sleep stage for this to work. The mechanism operates regardless.
+
+**A note on ramp length.** The arousal threshold research explains why a gradual ramp
+works: the sound only needs to rise from below your current sleep stage's threshold to
+just above it, and during light sleep that crossing happens at a low volume. The research
+does not prescribe an optimal ramp duration, and no study we cite tested gradual ramp
+alarms or their length. We default to a short 5 minute ramp because a sound left too quiet
+for too long can be habituated to by the sleeping brain, which works against waking. Treat
+ramp length as a personal comfort preference: shorter if a gentle alarm fails to wake you,
+longer if 5 minutes feels abrupt.
 
 ### Sound choice matters too
 
@@ -156,8 +165,8 @@ trigger, never as the primary mechanism.
 
 - Recurring alarms by day of week, or one-shot
 - Smart window: configurable width (10-30 min, default 20 min)
-- Gradual sound ramp: configurable duration (5-30 min, default 15 min), the primary
-  wake mechanism, grounded in auditory arousal threshold science
+- Gradual sound ramp: configurable duration (1-15 min, default 5 min). This is a comfort
+  setting, not a clinical parameter. See the note below.
 - Screen brightness ramps from 0% to 100% alongside the sound
 - Motion sensitivity: Low / Medium / High (Wear OS wrist detection or on-mattress phone
   accelerometer, used as an optional early-trigger enhancement)

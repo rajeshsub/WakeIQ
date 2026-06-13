@@ -125,8 +125,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 Slider(
                     value = uiState.defaultRampDurationMinutes.toFloat(),
                     onValueChange = { viewModel.setDefaultRampDuration(it.toInt()) },
-                    valueRange = 5f..30f,
-                    steps = 4,
+                    valueRange = 1f..15f,
+                    steps = 13,
                 )
             }
 

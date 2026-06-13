@@ -10,7 +10,7 @@ data class Alarm(
     val isEnabled: Boolean = true,
     val soundConfig: SoundConfig = SoundConfig(),
     val smartWindowMinutes: Int = 20,
-    val rampDurationMinutes: Int = 15,
+    val rampDurationMinutes: Int = 5,
     val motionSensitivity: MotionSensitivity = MotionSensitivity.MEDIUM,
     val snoozeMinutes: Int = 9,
     val label: String = "",

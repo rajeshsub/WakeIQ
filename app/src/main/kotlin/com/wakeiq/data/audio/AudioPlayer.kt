@@ -8,6 +8,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.wakeiq.domain.model.BundledSound
 import com.wakeiq.domain.model.SoundConfig
@@ -59,6 +60,7 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
 
     // Pin output to the phone's built-in speaker so the alarm is never diverted to a connected
     // Bluetooth headset or speaker that the sleeper cannot hear.
+    @androidx.annotation.OptIn(UnstableApi::class)
     private fun routeToBuiltInSpeaker(exo: ExoPlayer) {
         runCatching {
             val speaker = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
@@ -82,15 +84,17 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         Timber.d("Sound switched to: ${soundConfig.bundledSound}")
     }
 
-    // Phase 1: whisper ramp (START_VOLUME to WHISPER_VOLUME over WHISPER_PHASE_MS).
-    // Phase 2: escalation ramp (WHISPER_VOLUME to targetVolume over ESCALATION_PHASE_MS).
+    // Phase 1: whisper ramp (START_VOLUME to WHISPER_VOLUME).
+    // Phase 2: escalation ramp (WHISPER_VOLUME to targetVolume).
     // Phase 3: holds at targetVolume. Caller responsible for sound cycling after this returns.
-    // Total time to peak is WHISPER_PHASE_MS + ESCALATION_PHASE_MS (5 minutes).
-    suspend fun escalateVolume(targetVolume: Float) {
-        rampVolumeBetween(START_VOLUME, WHISPER_VOLUME, WHISPER_PHASE_MS)
-        rampVolumeBetween(WHISPER_VOLUME, targetVolume, ESCALATION_PHASE_MS)
+    // The two phases sum to rampDurationMs, split via computeRampPhases, so the audio ramp stays
+    // in step with the brightness ramp at whatever duration the alarm is configured for.
+    suspend fun escalateVolume(targetVolume: Float, rampDurationMs: Long) {
+        val (whisperMs, escalationMs) = computeRampPhases(rampDurationMs)
+        rampVolumeBetween(START_VOLUME, WHISPER_VOLUME, whisperMs)
+        rampVolumeBetween(WHISPER_VOLUME, targetVolume, escalationMs)
         player?.volume = targetVolume.coerceIn(0f, 1f)
-        Timber.d("Escalation complete: full volume $targetVolume")
+        Timber.d("Escalation complete over ${rampDurationMs}ms: full volume $targetVolume")
     }
 
     private suspend fun rampVolumeBetween(from: Float, to: Float, durationMs: Long) {
@@ -120,6 +124,7 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
     }
 
     fun release() {
+        restoreAlarmStreamVolume()
         player?.stop()
         player?.release()
         player = null
@@ -147,7 +152,19 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         private const val VOLUME_RAMP_STEPS = 100
         const val START_VOLUME = 0.05f
         const val WHISPER_VOLUME = 0.15f
-        const val WHISPER_PHASE_MS = 120_000L
-        const val ESCALATION_PHASE_MS = 180_000L
+        private const val WHISPER_PHASE_FRACTION = 0.40
+        private const val WHISPER_FLOOR_MS = 20_000L
+        private const val MIN_ESCALATION_MS = 10_000L
+
+        // Split the total ramp into a whisper phase and an escalation phase. The whisper phase is
+        // 40 percent of the total but never shorter than WHISPER_FLOOR_MS, so even very short ramps
+        // open gently. The two phases always sum to the total. Pure so it can be unit-tested.
+        internal fun computeRampPhases(totalMs: Long): Pair<Long, Long> {
+            val raw = (totalMs * WHISPER_PHASE_FRACTION).toLong()
+            val whisper = raw.coerceAtLeast(WHISPER_FLOOR_MS)
+                .coerceAtMost((totalMs - MIN_ESCALATION_MS).coerceAtLeast(0L))
+            val escalation = totalMs - whisper
+            return whisper to escalation
+        }
     }
 }

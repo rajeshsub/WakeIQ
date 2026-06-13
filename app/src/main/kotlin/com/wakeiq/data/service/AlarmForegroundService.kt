@@ -125,11 +125,12 @@ class AlarmForegroundService : Service() {
 
         audioPlayer.prepare(alarm.soundConfig)
         audioPlayer.play()
+        val rampDurationMs = alarm.rampDurationMinutes * MILLIS_PER_MINUTE
         scope.launch(Dispatchers.IO) {
-            audioPlayer.escalateVolume(alarm.soundConfig.peakVolume)
+            audioPlayer.escalateVolume(alarm.soundConfig.peakVolume, rampDurationMs)
         }
         scope.launch {
-            delay(SOUND_SWITCH_START_MS)
+            delay(rampDurationMs)
             cycleSounds(alarm)
         }
     }
@@ -298,8 +299,7 @@ class AlarmForegroundService : Service() {
         const val EXTRA_ALARM_ID = "extra_alarm_id"
         const val EXTRA_PHASE = "extra_phase"
         private const val MILLIS_PER_MINUTE = 60_000L
-        private const val DEFAULT_RAMP_MINUTES = 15L
-        private const val SOUND_SWITCH_START_MS = 300_000L
+        private const val DEFAULT_RAMP_MINUTES = 5L
         private const val SOUND_SWITCH_INTERVAL_MS = 120_000L
         private const val REQUEST_CODE_DISMISS = 2001
         private const val REQUEST_CODE_SNOOZE = 2002
