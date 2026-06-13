@@ -164,7 +164,7 @@ trigger, never as the primary mechanism.
 - 21 bundled melodic and natural sounds, chosen for their sleep-inertia-reducing
   properties (see science above):
   * **Nature:** Birds & Light Rain, Forest Birdsong, Ocean Coast, Bubbling Stream, City Rain, Thunderstorm
-  * **Farm:** Sheep Horses & Dogs, Crickets at Night, Morning Roosters, Mournful Cows, Summer Field at Dusk
+  * **Farm:** Sheep Horses & Dogs, Crickets at Night, Morning Roosters, Farm Cows, Summer Field at Dusk
   * **Music:** Lament of the Vaquero, Music Box, Piano, Indian Harp, Wind Chimes
   * **Ambient Places:** Cafe, Airport Terminal, Busy Street, Office, Train Station
 - Sound preview: tap any sound in the editor to hear it before saving

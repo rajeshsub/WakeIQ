@@ -31,7 +31,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,10 +57,6 @@ fun PermissionsScreen(onDone: () -> Unit, viewModel: PermissionsViewModel = hilt
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    LaunchedEffect(permissions) {
-        if (!viewModel.anyCriticalMissing) onDone()
     }
 
     val notifLauncher = rememberLauncherForActivityResult(
@@ -136,11 +131,14 @@ fun PermissionsScreen(onDone: () -> Unit, viewModel: PermissionsViewModel = hilt
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                                     context.startActivity(
                                         Intent(
-                                            "android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENTS",
+                                            Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
                                             Uri.parse("package:${context.packageName}"),
                                         ),
                                     )
                                 }
+                            // Battery optimisation exemption is requestable here. OEM autostart
+                            // managers (Xiaomi, Oppo, Vivo, Realme) cannot be toggled in code and
+                            // must be documented for users in the README.
                             PermissionType.BATTERY_OPTIMIZATION ->
                                 context.startActivity(
                                     Intent(

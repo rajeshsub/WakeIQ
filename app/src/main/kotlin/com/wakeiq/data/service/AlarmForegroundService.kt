@@ -6,10 +6,13 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.wakeiq.R
+import com.wakeiq.data.alarm.AlarmReceiver
 import com.wakeiq.data.alarm.AlarmScheduler
 import com.wakeiq.data.audio.AudioPlayer
 import com.wakeiq.data.sensor.MotionDetector
@@ -21,6 +24,7 @@ import com.wakeiq.presentation.alarm.AlarmActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -43,6 +47,9 @@ class AlarmForegroundService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var currentAlarmId: Long = -1L
     private var currentAlarm: Alarm? = null
+    private var monitorJob: Job? = null
+    private var escalated = false
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -54,10 +61,11 @@ class AlarmForegroundService : Service() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
-                val isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false)
+                val phase = intent.getStringExtra(EXTRA_PHASE) ?: AlarmReceiver.PHASE_RING
                 currentAlarmId = alarmId
-                startForeground(NOTIFICATION_ID, buildLoadingNotification())
-                loadAndStartAlarm(alarmId, isSnooze)
+                acquireWakeLock()
+                postInitialForeground(alarmId, phase)
+                loadAndStartAlarm(alarmId, phase)
             }
             ACTION_DISMISS -> dismissAlarm()
             ACTION_SNOOZE -> snoozeAlarm()
@@ -65,7 +73,18 @@ class AlarmForegroundService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun loadAndStartAlarm(alarmId: Long, isSnooze: Boolean) {
+    // The very first foreground notification already carries the full-screen intent and
+    // CATEGORY_ALARM, so the alarm can take over the screen at t=0 of the service rather than
+    // after the async DB load. Monitor-phase starts only show a waiting notification (no ring yet).
+    private fun postInitialForeground(alarmId: Long, phase: String) {
+        if (phase == AlarmReceiver.PHASE_RING) {
+            startForeground(NOTIFICATION_ID_ESCALATION, buildEscalationNotification(alarmId, null))
+        } else {
+            startForeground(NOTIFICATION_ID, buildWaitingNotification(null))
+        }
+    }
+
+    private fun loadAndStartAlarm(alarmId: Long, phase: String) {
         scope.launch {
             val alarm = alarmRepository.getById(alarmId) ?: run {
                 Timber.e("Alarm $alarmId not found")
@@ -73,51 +92,55 @@ class AlarmForegroundService : Service() {
                 return@launch
             }
             currentAlarm = alarm
-            if (isSnooze) {
-                updateWaitingNotification(alarm)
-                triggerEscalation(alarm)
+            if (phase == AlarmReceiver.PHASE_MONITOR) {
+                startMonitoring(alarm)
             } else {
-                startSmartWindow(alarm)
+                triggerEscalation(alarm)
             }
         }
     }
 
-    private fun startSmartWindow(alarm: Alarm) {
-        scope.launch {
-            val windowMs = alarm.smartWindowMinutes * MILLIS_PER_MINUTE
-            updateWaitingNotification(alarm)
-            motionDetector.startDetection(alarm.motionSensitivity)
-
-            val motionJob = launch {
-                motionDetector.lightSleepDetected.collect {
-                    Timber.i("Light sleep detected, starting escalation early")
-                    triggerEscalation(alarm)
-                    cancel()
-                }
+    private fun startMonitoring(alarm: Alarm) {
+        updateWaitingNotification(alarm)
+        motionDetector.startDetection(alarm.motionSensitivity)
+        monitorJob = scope.launch {
+            motionDetector.lightSleepDetected.collect {
+                Timber.i("Light sleep detected, starting escalation early")
+                triggerEscalation(alarm)
             }
-
-            delay(windowMs)
-            motionJob.cancel()
-            motionDetector.stopDetection()
-            triggerEscalation(alarm)
         }
     }
 
     private fun triggerEscalation(alarm: Alarm) {
+        if (escalated) return
+        escalated = true
+        monitorJob?.cancel()
         motionDetector.stopDetection()
+        // Clear any sibling pending alarm for this id (e.g. the ring alarm when motion fired early).
+        alarmScheduler.cancel(alarm.id)
         Timber.i("Triggering alarm escalation for alarm ${alarm.id}")
-        updateEscalationNotification(alarm)
+
+        postEscalationNotification(alarm)
+        launchAlarmActivity(alarm)
+
         audioPlayer.prepare(alarm.soundConfig)
         audioPlayer.play()
-
         scope.launch(Dispatchers.IO) {
             audioPlayer.escalateVolume(alarm.soundConfig.peakVolume)
         }
-
         scope.launch {
             delay(SOUND_SWITCH_START_MS)
             cycleSounds(alarm)
         }
+    }
+
+    // Direct launch within the alarm's background-activity-start exemption window. AlarmActivity has
+    // showWhenLocked + turnScreenOn, so this turns the screen on and shows over the lock screen. The
+    // FSI on the notification remains the fallback for OEMs that block the direct start.
+    private fun launchAlarmActivity(alarm: Alarm) {
+        runCatching {
+            startActivity(buildAlarmActivityIntent(alarm.id, alarm.rampDurationMinutes * MILLIS_PER_MINUTE))
+        }.onFailure { Timber.w(it, "Direct AlarmActivity start blocked; relying on full-screen intent") }
     }
 
     private suspend fun cycleSounds(alarm: Alarm) {
@@ -137,8 +160,8 @@ class AlarmForegroundService : Service() {
 
     private fun dismissAlarm() {
         Timber.i("Alarm dismissed")
-        motionDetector.stopDetection()
-        audioPlayer.release()
+        stopAlarmWork()
+        getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID_ESCALATION)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -146,32 +169,47 @@ class AlarmForegroundService : Service() {
     private fun snoozeAlarm() {
         val alarm = currentAlarm
         Timber.i("Alarm snoozed for alarm $currentAlarmId")
-        motionDetector.stopDetection()
-        audioPlayer.release()
+        stopAlarmWork()
         if (alarm != null) {
             alarmScheduler.scheduleSnooze(alarm)
         }
+        getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID_ESCALATION)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    private fun stopAlarmWork() {
+        monitorJob?.cancel()
+        motionDetector.stopDetection()
+        audioPlayer.release()
+        releaseWakeLock()
     }
 
     override fun onDestroy() {
         scope.cancel()
         motionDetector.stopDetection()
         audioPlayer.release()
+        releaseWakeLock()
         super.onDestroy()
     }
 
-    private fun buildLoadingNotification(): Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setSmallIcon(R.drawable.ic_notification)
-        .setContentTitle(getString(R.string.app_name))
-        .setOngoing(true)
-        .setPriority(NotificationCompat.PRIORITY_MAX)
-        .build()
+    private fun acquireWakeLock() {
+        releaseWakeLock()
+        val pm = getSystemService(PowerManager::class.java)
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG).apply {
+            setReferenceCounted(false)
+            acquire(WAKE_LOCK_TIMEOUT_MS)
+        }
+    }
 
-    private fun updateWaitingNotification(alarm: Alarm) {
-        val label = alarm.label.ifEmpty { alarm.timeString }
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun releaseWakeLock() {
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
+    }
+
+    private fun buildWaitingNotification(alarm: Alarm?): Notification {
+        val label = alarm?.let { it.label.ifEmpty { it.timeString } } ?: getString(R.string.app_name)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.notif_alarm_title))
             .setContentText(label)
@@ -180,13 +218,17 @@ class AlarmForegroundService : Service() {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
-        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
     }
 
-    private fun updateEscalationNotification(alarm: Alarm) {
-        val label = alarm.label.ifEmpty { alarm.timeString }
-        val activityPi = buildAlarmActivityIntent(alarm)
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun updateWaitingNotification(alarm: Alarm) {
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildWaitingNotification(alarm))
+    }
+
+    private fun buildEscalationNotification(alarmId: Long, alarm: Alarm?): Notification {
+        val label = alarm?.let { it.label.ifEmpty { it.timeString } } ?: getString(R.string.notif_alarm_title)
+        val rampMs = (alarm?.rampDurationMinutes?.toLong() ?: DEFAULT_RAMP_MINUTES) * MILLIS_PER_MINUTE
+        val activityPi = buildAlarmActivityPendingIntent(alarmId, rampMs)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.notif_alarm_title))
             .setContentText(label)
@@ -199,22 +241,32 @@ class AlarmForegroundService : Service() {
             .addAction(buildSnoozeAction())
             .addAction(buildDismissAction())
             .build()
-        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
     }
 
-    private fun buildAlarmActivityIntent(alarm: Alarm): PendingIntent {
-        val intent = Intent(this, AlarmActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(AlarmActivity.EXTRA_ALARM_ID, alarm.id)
-            putExtra(AlarmActivity.EXTRA_RAMP_DURATION_MS, alarm.rampDurationMinutes * MILLIS_PER_MINUTE)
+    private fun postEscalationNotification(alarm: Alarm) {
+        val nm = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !nm.canUseFullScreenIntent()) {
+            Timber.w("USE_FULL_SCREEN_INTENT not granted - alarm may not launch full-screen")
         }
-        return PendingIntent.getActivity(
+        // Single post on NOTIFICATION_ID_ESCALATION (the same id the initial RING post used).
+        startForeground(NOTIFICATION_ID_ESCALATION, buildEscalationNotification(alarm.id, alarm))
+        nm.cancel(NOTIFICATION_ID)
+    }
+
+    private fun buildAlarmActivityIntent(alarmId: Long, rampDurationMs: Long): Intent =
+        Intent(this, AlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(AlarmActivity.EXTRA_ALARM_ID, alarmId)
+            putExtra(AlarmActivity.EXTRA_RAMP_DURATION_MS, rampDurationMs)
+        }
+
+    private fun buildAlarmActivityPendingIntent(alarmId: Long, rampDurationMs: Long): PendingIntent =
+        PendingIntent.getActivity(
             this,
-            alarm.id.toInt(),
-            intent,
+            alarmId.toInt(),
+            buildAlarmActivityIntent(alarmId, rampDurationMs),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-    }
 
     private fun buildDismissAction(): NotificationCompat.Action {
         val pi = PendingIntent.getService(
@@ -237,18 +289,22 @@ class AlarmForegroundService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "alarm_channel"
+        const val CHANNEL_ID = "alarm_channel_v2"
         const val NOTIFICATION_ID = 1001
+        const val NOTIFICATION_ID_ESCALATION = 1002
         const val ACTION_START = "com.wakeiq.action.START_ALARM"
         const val ACTION_DISMISS = "com.wakeiq.action.DISMISS_ALARM"
         const val ACTION_SNOOZE = "com.wakeiq.action.SNOOZE_ALARM"
         const val EXTRA_ALARM_ID = "extra_alarm_id"
-        const val EXTRA_IS_SNOOZE = "extra_is_snooze"
+        const val EXTRA_PHASE = "extra_phase"
         private const val MILLIS_PER_MINUTE = 60_000L
+        private const val DEFAULT_RAMP_MINUTES = 15L
         private const val SOUND_SWITCH_START_MS = 300_000L
         private const val SOUND_SWITCH_INTERVAL_MS = 120_000L
         private const val REQUEST_CODE_DISMISS = 2001
         private const val REQUEST_CODE_SNOOZE = 2002
+        private const val WAKE_LOCK_TAG = "WakeIQ:alarm"
+        private const val WAKE_LOCK_TIMEOUT_MS = 60_000L
 
         private val FALLBACK_SOUND_ROTATION = listOf(
             BundledSound.MORNING_ROOSTERS,
@@ -257,11 +313,11 @@ class AlarmForegroundService : Service() {
             BundledSound.TRAIN_STATION,
         )
 
-        fun start(context: Context, alarmId: Long, isSnooze: Boolean = false) {
+        fun start(context: Context, alarmId: Long, phase: String = AlarmReceiver.PHASE_RING) {
             val intent = Intent(context, AlarmForegroundService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_ALARM_ID, alarmId)
-                putExtra(EXTRA_IS_SNOOZE, isSnooze)
+                putExtra(EXTRA_PHASE, phase)
             }
             ContextCompat.startForegroundService(context, intent)
         }

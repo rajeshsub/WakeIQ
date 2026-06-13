@@ -1,5 +1,6 @@
 package com.wakeiq
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -50,12 +51,13 @@ class WakeIQApp : Application() {
         createNotificationChannels()
     }
 
+    @SuppressLint("WrongConstant") // IMPORTANCE_MAX is valid for alarm channels; lint IntDef is incomplete
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 AlarmForegroundService.CHANNEL_ID,
                 getString(R.string.notif_channel_alarm_name),
-                NotificationManager.IMPORTANCE_HIGH,
+                NotificationManager.IMPORTANCE_MAX,
             ).apply {
                 description = getString(R.string.notif_channel_alarm_desc)
                 setShowBadge(false)

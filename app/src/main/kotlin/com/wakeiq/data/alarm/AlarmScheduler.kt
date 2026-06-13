@@ -13,6 +13,12 @@ import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * A single exact-alarm registration that backs one moment in the firing pipeline.
+ * Smart Wake alarms produce two of these (monitor + ring); everything else produces one.
+ */
+internal data class ScheduledTrigger(val phase: String, val requestCode: Int, val triggerAtMillis: Long)
+
 @Singleton
 class AlarmScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -26,25 +32,12 @@ class AlarmScheduler @Inject constructor(
     fun schedule(alarm: Alarm) {
         if (!alarm.isEnabled) return
         val triggerAt = getNextAlarmTime(alarm) ?: return
-
-        val smartWindowStart = triggerAt.minusMinutes(alarm.smartWindowMinutes.toLong())
-        val scheduledAt = if (smartWindowStart.isAfter(ZonedDateTime.now())) {
-            smartWindowStart
-        } else {
-            triggerAt
-        }
-
         if (!canScheduleExactAlarms()) {
             Timber.w("Exact alarm permission not granted for alarm ${alarm.id}")
             return
         }
-
-        val intent = buildAlarmIntent(alarm.id)
-        alarmManager.setAlarmClock(
-            AlarmManager.AlarmClockInfo(scheduledAt.toInstant().toEpochMilli(), intent),
-            intent,
-        )
-        Timber.i("Scheduled alarm ${alarm.id} at $scheduledAt (target: $triggerAt)")
+        planTriggers(alarm, triggerAt, ZonedDateTime.now()).forEach { setExact(alarm.id, it) }
+        Timber.i("Scheduled alarm ${alarm.id} for target $triggerAt")
     }
 
     fun scheduleSnooze(alarm: Alarm) {
@@ -53,47 +46,71 @@ class AlarmScheduler @Inject constructor(
             return
         }
         val triggerAt = ZonedDateTime.now().plusMinutes(alarm.snoozeMinutes.toLong())
-        val intent = buildSnoozeIntent(alarm.id)
-        alarmManager.setAlarmClock(
-            AlarmManager.AlarmClockInfo(triggerAt.toInstant().toEpochMilli(), intent),
-            intent,
+        setExact(
+            alarm.id,
+            ScheduledTrigger(AlarmReceiver.PHASE_RING, ringRequestCode(alarm.id), triggerAt.toInstant().toEpochMilli()),
         )
         Timber.i("Scheduled snooze for alarm ${alarm.id} at $triggerAt")
     }
 
     fun cancel(alarmId: Long) {
-        alarmManager.cancel(buildAlarmIntent(alarmId))
+        alarmManager.cancel(buildPendingIntent(alarmId, AlarmReceiver.PHASE_MONITOR, monitorRequestCode(alarmId)))
+        alarmManager.cancel(buildPendingIntent(alarmId, AlarmReceiver.PHASE_RING, ringRequestCode(alarmId)))
         Timber.i("Cancelled alarm $alarmId")
     }
 
-    private fun buildAlarmIntent(alarmId: Long): PendingIntent {
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            action = AlarmReceiver.ACTION_FIRE
-            putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
-        }
-        return PendingIntent.getBroadcast(
-            context,
-            alarmId.toInt(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+    private fun setExact(alarmId: Long, trigger: ScheduledTrigger) {
+        val pi = buildPendingIntent(alarmId, trigger.phase, trigger.requestCode)
+        alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(trigger.triggerAtMillis, pi), pi)
     }
 
-    private fun buildSnoozeIntent(alarmId: Long): PendingIntent {
+    private fun buildPendingIntent(alarmId: Long, phase: String, requestCode: Int): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_FIRE
             putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
-            putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, true)
+            putExtra(AlarmReceiver.EXTRA_PHASE, phase)
         }
         return PendingIntent.getBroadcast(
             context,
-            (alarmId + SNOOZE_REQUEST_CODE_OFFSET).toInt(),
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
     companion object {
-        private const val SNOOZE_REQUEST_CODE_OFFSET = 10_000
+        private const val MONITOR_REQUEST_CODE_OFFSET = 100_000
+
+        private fun ringRequestCode(alarmId: Long): Int = alarmId.toInt()
+
+        private fun monitorRequestCode(alarmId: Long): Int = (alarmId + MONITOR_REQUEST_CODE_OFFSET).toInt()
+
+        /**
+         * Pure scheduling decision, isolated from Android so it can be unit-tested.
+         * Smart Wake (with a window that still lies in the future) is driven by a dedicated
+         * exact alarm for the ring moment, so the background-activity-start exemption is valid
+         * when the alarm actually rings, rather than relying on an in-process delay.
+         */
+        internal fun planTriggers(alarm: Alarm, triggerAt: ZonedDateTime, now: ZonedDateTime): List<ScheduledTrigger> {
+            val ring = ScheduledTrigger(
+                AlarmReceiver.PHASE_RING,
+                ringRequestCode(alarm.id),
+                triggerAt.toInstant().toEpochMilli(),
+            )
+            val windowStart = triggerAt.minusMinutes(alarm.smartWindowMinutes.toLong())
+            val useWindow = alarm.useSmartWake && alarm.smartWindowMinutes > 0 && windowStart.isAfter(now)
+            return if (useWindow) {
+                listOf(
+                    ScheduledTrigger(
+                        AlarmReceiver.PHASE_MONITOR,
+                        monitorRequestCode(alarm.id),
+                        windowStart.toInstant().toEpochMilli(),
+                    ),
+                    ring,
+                )
+            } else {
+                listOf(ring)
+            }
+        }
     }
 }

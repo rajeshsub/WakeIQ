@@ -68,6 +68,7 @@
             android:name=".presentation.alarm.AlarmActivity"
             android:exported="false"
             android:launchMode="singleInstance"
+            android:showWhenLocked="true"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"

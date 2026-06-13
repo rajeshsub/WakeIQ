@@ -2,7 +2,9 @@ package com.wakeiq.data.alarm
 
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.domain.usecase.GetNextAlarmTimeUseCase
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 
@@ -45,5 +47,45 @@ class AlarmSchedulerTest {
         val result = getNextAlarmTime(alarm, from)
         assertNotNull(result)
         assert(result!!.isAfter(from))
+    }
+
+    @Test
+    fun `smart wake alarm plans a monitor trigger and a ring trigger`() {
+        val now = ZonedDateTime.now()
+        val triggerAt = now.plusHours(1)
+        val alarm = Alarm(hour = 7, minute = 0, useSmartWake = true, smartWindowMinutes = 20)
+
+        val triggers = AlarmScheduler.planTriggers(alarm, triggerAt, now)
+
+        assertEquals(2, triggers.size)
+        assertEquals(setOf(AlarmReceiver.PHASE_MONITOR, AlarmReceiver.PHASE_RING), triggers.map { it.phase }.toSet())
+        val monitor = triggers.first { it.phase == AlarmReceiver.PHASE_MONITOR }
+        val ring = triggers.first { it.phase == AlarmReceiver.PHASE_RING }
+        assertTrue(monitor.requestCode != ring.requestCode, "monitor and ring must use distinct request codes")
+        assertTrue(monitor.triggerAtMillis < ring.triggerAtMillis, "monitor must precede the ring")
+    }
+
+    @Test
+    fun `non-smart alarm plans a single ring trigger`() {
+        val now = ZonedDateTime.now()
+        val triggerAt = now.plusHours(1)
+        val alarm = Alarm(hour = 7, minute = 0, useSmartWake = false, smartWindowMinutes = 20)
+
+        val triggers = AlarmScheduler.planTriggers(alarm, triggerAt, now)
+
+        assertEquals(1, triggers.size)
+        assertEquals(AlarmReceiver.PHASE_RING, triggers.single().phase)
+    }
+
+    @Test
+    fun `smart wake alarm whose window already passed plans only a ring trigger`() {
+        val now = ZonedDateTime.now()
+        val triggerAt = now.plusMinutes(10)
+        val alarm = Alarm(hour = 7, minute = 0, useSmartWake = true, smartWindowMinutes = 20)
+
+        val triggers = AlarmScheduler.planTriggers(alarm, triggerAt, now)
+
+        assertEquals(1, triggers.size)
+        assertEquals(AlarmReceiver.PHASE_RING, triggers.single().phase)
     }
 }

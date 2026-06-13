@@ -17,14 +17,19 @@ class AlarmReceiver : BroadcastReceiver() {
             Timber.e("AlarmReceiver received intent with no alarm ID")
             return
         }
-        val isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false)
-        Timber.d("Alarm receiver fired for alarm $alarmId (snooze=$isSnooze)")
-        AlarmForegroundService.start(context, alarmId, isSnooze)
+        val phase = intent.getStringExtra(EXTRA_PHASE) ?: PHASE_RING
+        Timber.d("Alarm receiver fired for alarm $alarmId (phase=$phase)")
+        AlarmForegroundService.start(context, alarmId, phase)
     }
 
     companion object {
         const val ACTION_FIRE = "com.wakeiq.ACTION_FIRE_ALARM"
         const val EXTRA_ALARM_ID = "extra_alarm_id"
-        const val EXTRA_IS_SNOOZE = "extra_is_snooze"
+        const val EXTRA_PHASE = "extra_phase"
+
+        // Smart Wake fires a monitor alarm at the window start (motion detection only) and a
+        // separate ring alarm at the hard target time. Non-smart alarms and snoozes use PHASE_RING.
+        const val PHASE_MONITOR = "monitor"
+        const val PHASE_RING = "ring"
     }
 }
