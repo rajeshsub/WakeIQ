@@ -18,9 +18,12 @@ import org.junit.runner.RunWith
 class AlarmFlowTest {
 
     @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    val permissionsRule = GrantSystemPermissionsRule()
 
     @get:Rule(order = 1)
+    val hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 2)
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Before
