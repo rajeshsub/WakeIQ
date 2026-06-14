@@ -113,7 +113,7 @@ class PermissionsViewModel @Inject constructor(@ApplicationContext private val c
                         type = PermissionType.DND_OVERRIDE,
                         title = context.getString(R.string.perm_setup_dnd_title),
                         rationale = context.getString(R.string.perm_setup_dnd_body),
-                        isCritical = false,
+                        isCritical = true,
                         isGranted = dndGranted,
                     ),
                 )

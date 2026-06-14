@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +63,12 @@ fun PermissionsScreen(onDone: () -> Unit, viewModel: PermissionsViewModel = hilt
     val notifLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { viewModel.refresh() }
+
+    // Once every required permission (including Override Do Not Disturb) is granted, advance
+    // automatically. The refresh on ON_RESUME above re-evaluates this after returning from settings.
+    LaunchedEffect(permissions) {
+        if (!viewModel.anyCriticalMissing) onDone()
+    }
 
     Scaffold(
         bottomBar = {

@@ -126,7 +126,10 @@ class AlarmForegroundService : Service() {
         audioPlayer.prepare(alarm.soundConfig)
         audioPlayer.play()
         val rampDurationMs = alarm.rampDurationMinutes * MILLIS_PER_MINUTE
-        scope.launch(Dispatchers.IO) {
+        // The ExoPlayer is created and accessed on the Main thread; the volume ramp must run on the
+        // same thread or ExoPlayer throws "Player is accessed on the wrong thread". The ramp is only
+        // delays plus volume writes, so Main is appropriate.
+        scope.launch {
             audioPlayer.escalateVolume(alarm.soundConfig.peakVolume, rampDurationMs)
         }
         scope.launch {

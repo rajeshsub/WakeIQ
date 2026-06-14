@@ -121,7 +121,7 @@
     <string name="perm_setup_battery_body">Android can kill WakeIQ to save battery before your alarm fires. Exempting the app from battery optimisation prevents this.</string>
 
     <string name="perm_setup_dnd_title">Override Do Not Disturb</string>
-    <string name="perm_setup_dnd_body">Without this, your alarm will be silenced if your phone is in Do Not Disturb mode when it fires. Tap Grant and enable it under the Alarm channel.</string>
+    <string name="perm_setup_dnd_body">Without this, your alarm will be silenced if your phone is in Do Not Disturb mode when it fires. Grant Alarm notifications above first, then tap Grant here and turn on Override Do Not Disturb on the Alarm channel page.</string>
 
     <!-- Permission warning banner on home screen -->
     <string name="perm_banner_title">Alarm may not ring</string>
