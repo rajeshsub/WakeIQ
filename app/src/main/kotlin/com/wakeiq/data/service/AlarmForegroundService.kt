@@ -293,7 +293,7 @@ class AlarmForegroundService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "alarm_channel_v2"
+        const val CHANNEL_ID = "alarm_channel_v3"
         const val NOTIFICATION_ID = 1001
         const val NOTIFICATION_ID_ESCALATION = 1002
         const val ACTION_START = "com.wakeiq.action.START_ALARM"
