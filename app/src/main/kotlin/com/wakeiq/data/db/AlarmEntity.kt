@@ -26,6 +26,7 @@ data class AlarmEntity(
     val snoozeMinutes: Int,
     val label: String,
     val useSmartWake: Boolean = true,
+    val colorIndex: Int = 0,
 ) {
     fun toDomain(): Alarm = Alarm(
         id = id,
@@ -49,6 +50,7 @@ data class AlarmEntity(
         snoozeMinutes = snoozeMinutes,
         label = label,
         useSmartWake = useSmartWake,
+        colorIndex = colorIndex,
     )
 }
 
@@ -68,4 +70,5 @@ fun Alarm.toEntity(): AlarmEntity = AlarmEntity(
     snoozeMinutes = snoozeMinutes,
     label = label,
     useSmartWake = useSmartWake,
+    colorIndex = colorIndex,
 )

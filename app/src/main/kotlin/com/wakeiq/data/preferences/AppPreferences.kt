@@ -39,9 +39,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     val blueLightReductionEnabled: Flow<Boolean> =
         store.data.map { it[KEY_BLUE_LIGHT_REDUCTION] ?: true }
 
-    val warmHueIndex: Flow<Int> =
-        store.data.map { it[KEY_WARM_HUE_INDEX] ?: 0 }
-
     val defaultAlarmSeeded: Flow<Boolean> =
         store.data.map { it[KEY_DEFAULT_ALARM_SEEDED] ?: false }
 
@@ -68,10 +65,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         store.edit { it[KEY_BLUE_LIGHT_REDUCTION] = enabled }
     }
 
-    suspend fun setWarmHueIndex(index: Int) {
-        store.edit { it[KEY_WARM_HUE_INDEX] = index }
-    }
-
     suspend fun markDefaultAlarmSeeded() {
         store.edit { it[KEY_DEFAULT_ALARM_SEEDED] = true }
     }
@@ -90,7 +83,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val KEY_MOTION_SENSITIVITY = intPreferencesKey("motion_sensitivity")
         val KEY_SNOOZE_DURATION = intPreferencesKey("snooze_duration_minutes")
         val KEY_BLUE_LIGHT_REDUCTION = booleanPreferencesKey("blue_light_reduction_enabled")
-        val KEY_WARM_HUE_INDEX = intPreferencesKey("warm_hue_index")
         val KEY_DEFAULT_ALARM_SEEDED = booleanPreferencesKey("default_alarm_seeded")
         val KEY_USE_24_HOUR_CLOCK = booleanPreferencesKey("use_24_hour_clock")
     }

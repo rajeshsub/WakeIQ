@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeiq.R
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.presentation.AppStateViewModel
+import com.wakeiq.presentation.paletteForIndex
 import com.wakeiq.presentation.permissions.PermissionsViewModel
 import java.time.DayOfWeek
 
@@ -67,19 +67,6 @@ private val WEEKDAYS = setOf(
 )
 private val WEEKEND = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
 
-private data class CardPalette(val background: Color, val onBackground: Color) {
-    val isCustom get() = background != Color.Unspecified
-}
-
-private val CardPalettes = listOf(
-    CardPalette(Color.Unspecified, Color.Unspecified),
-    CardPalette(Color(0xFFFFFBEB), Color(0xFF92400E)),
-    CardPalette(Color(0xFFFFF1F2), Color(0xFF9F1239)),
-    CardPalette(Color(0xFFECFDF5), Color(0xFF065F46)),
-    CardPalette(Color(0xFFF0F9FF), Color(0xFF075985)),
-    CardPalette(Color(0xFFF5F3FF), Color(0xFF5B21B6)),
-)
-
 @Composable
 fun HomeScreen(
     onAddAlarm: () -> Unit,
@@ -91,9 +78,7 @@ fun HomeScreen(
     permissionsViewModel: PermissionsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val warmHueIndex by appState.warmHueIndex.collectAsStateWithLifecycle()
     val is24Hour by appState.use24HourClock.collectAsStateWithLifecycle()
-    val palette = CardPalettes.getOrElse(warmHueIndex) { CardPalettes[0] }
     val permissions by permissionsViewModel.permissions.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showExactAlarmDialog by remember { mutableStateOf(false) }
@@ -154,7 +139,6 @@ fun HomeScreen(
             is HomeUiState.Success -> AlarmList(
                 alarms = state.alarms,
                 padding = padding,
-                palette = palette,
                 is24Hour = is24Hour,
                 showPermissionWarning = permissionsViewModel.anyCriticalMissing,
                 onGrantPermissions = onOpenPermissions,
@@ -183,7 +167,6 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
 private fun AlarmList(
     alarms: List<Alarm>,
     padding: PaddingValues,
-    palette: CardPalette,
     is24Hour: Boolean,
     showPermissionWarning: Boolean,
     onGrantPermissions: () -> Unit,
@@ -219,7 +202,6 @@ private fun AlarmList(
             items(alarms, key = { it.id }) { alarm ->
                 AlarmCard(
                     alarm = alarm,
-                    palette = palette,
                     is24Hour = is24Hour,
                     onToggle = { enabled -> onToggle(alarm, enabled) },
                     onClick = { onTap(alarm) },
@@ -269,13 +251,8 @@ private fun PermissionWarningBanner(onClick: () -> Unit) {
 }
 
 @Composable
-private fun AlarmCard(
-    alarm: Alarm,
-    palette: CardPalette,
-    is24Hour: Boolean,
-    onToggle: (Boolean) -> Unit,
-    onClick: () -> Unit,
-) {
+private fun AlarmCard(alarm: Alarm, is24Hour: Boolean, onToggle: (Boolean) -> Unit, onClick: () -> Unit) {
+    val palette = paletteForIndex(alarm.colorIndex)
     val cardColors = if (palette.isCustom) {
         CardDefaults.cardColors(containerColor = palette.background)
     } else {

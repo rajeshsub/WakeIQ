@@ -40,6 +40,7 @@ data class EditAlarmUiState(
     val snoozeMinutes: Int = 9,
     val useSmartWake: Boolean = true,
     val isNapDuration: Boolean = false,
+    val colorIndex: Int = 0,
     val is24Hour: Boolean = false,
     val isSaving: Boolean = false,
     val savedOrDeleted: Boolean = false,
@@ -103,6 +104,7 @@ class EditAlarmViewModel @Inject constructor(
                             snoozeMinutes = alarm.snoozeMinutes,
                             isNapDuration = nap,
                             useSmartWake = !nap && alarm.useSmartWake,
+                            colorIndex = alarm.colorIndex,
                             is24Hour = is24Hour,
                         )
                     }
@@ -161,6 +163,8 @@ class EditAlarmViewModel @Inject constructor(
 
     fun setSensitivity(s: MotionSensitivity) = _uiState.update { it.copy(motionSensitivity = s) }
 
+    fun setColorIndex(index: Int) = _uiState.update { it.copy(colorIndex = index) }
+
     fun setUseSmartWake(enabled: Boolean) {
         if (_uiState.value.isNapDuration) return
         smartWakeUserChoice = enabled
@@ -172,7 +176,8 @@ class EditAlarmViewModel @Inject constructor(
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             val smartWindow = prefs.defaultSmartWindowMinutes.first()
-            val ramp = prefs.defaultRampDurationMinutes.first()
+            // Naps (alarm under 90 min away) ring at full volume at the set time, with no gentle ramp.
+            val ramp = if (state.isNapDuration) 0 else prefs.defaultRampDurationMinutes.first()
             // Final guard: a nap alarm is never saved with smart wake, regardless of stale state.
             val effectiveSmartWake = state.useSmartWake && !state.isNapDuration
             val alarm = Alarm(
@@ -188,6 +193,7 @@ class EditAlarmViewModel @Inject constructor(
                 snoozeMinutes = state.snoozeMinutes,
                 label = state.label,
                 useSmartWake = effectiveSmartWake,
+                colorIndex = state.colorIndex,
             )
             val savedId = saveAlarm(alarm)
             scheduler.schedule(alarm.copy(id = savedId))

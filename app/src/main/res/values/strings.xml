@@ -31,6 +31,10 @@
     <string name="weekends">Weekends</string>
 
     <!-- Smart window -->
+    <string name="smart_window_info_title">Smart wake window</string>
+    <string name="smart_window_info_body">How long before your set time WakeIQ starts watching for light sleep, so it can begin the gentle ramp at the best moment. A wider window gives more chances to catch a light phase. 20 to 30 minutes works well. Set to 0 to turn smart wake off and ramp from the set time. Smart wake is not used for alarms under 90 minutes away.</string>
+    <string name="ramp_duration_info_title">Gradual wake duration</string>
+    <string name="ramp_duration_info_body">How long the alarm sound and screen brightness take to rise from near silent to full. The ramp finishes at your set time. 5 minutes is a good default. Longer feels gentler, but a sound left too quiet for too long can be slept through. Shorter is more assertive.</string>
     <string name="smart_window_title">Smart wake window</string>
     <string name="smart_window_desc">Alarm window opens %d min before your set time</string>
     <string name="smart_window_off">Disabled. Alarm fires exactly on time.</string>
@@ -113,7 +117,7 @@
     <string name="perm_setup_battery_body">Android can kill WakeIQ to save battery before your alarm fires. Exempting the app from battery optimisation prevents this.</string>
 
     <string name="perm_setup_dnd_title">Override Do Not Disturb</string>
-    <string name="perm_setup_dnd_body">Without this, your alarm will be silenced if your phone is in Do Not Disturb mode when it fires. Grant Alarm notifications above first, then tap Grant here and turn on Override Do Not Disturb on the Alarm channel page.</string>
+    <string name="perm_setup_dnd_body">Lets the alarm show and sound through Do Not Disturb. Tap Grant, then switch on WakeIQ in the Do Not Disturb access list.</string>
 
     <!-- Permission warning banner on home screen -->
     <string name="perm_banner_title">Alarm may not ring</string>

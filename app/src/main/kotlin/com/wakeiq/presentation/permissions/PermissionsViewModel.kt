@@ -10,7 +10,6 @@ import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.wakeiq.R
-import com.wakeiq.data.service.AlarmForegroundService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,19 +104,15 @@ class PermissionsViewModel @Inject constructor(@ApplicationContext private val c
                 ),
             )
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                val dndGranted =
-                    nm.getNotificationChannel(AlarmForegroundService.CHANNEL_ID)?.canBypassDnd() ?: false
-                add(
-                    AppPermission(
-                        type = PermissionType.DND_OVERRIDE,
-                        title = context.getString(R.string.perm_setup_dnd_title),
-                        rationale = context.getString(R.string.perm_setup_dnd_body),
-                        isCritical = true,
-                        isGranted = dndGranted,
-                    ),
-                )
-            }
+            add(
+                AppPermission(
+                    type = PermissionType.DND_OVERRIDE,
+                    title = context.getString(R.string.perm_setup_dnd_title),
+                    rationale = context.getString(R.string.perm_setup_dnd_body),
+                    isCritical = true,
+                    isGranted = nm.isNotificationPolicyAccessGranted(),
+                ),
+            )
         }
     }
 }

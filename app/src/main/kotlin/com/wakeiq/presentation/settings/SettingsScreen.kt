@@ -1,19 +1,14 @@
 package com.wakeiq.presentation.settings
 
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -39,8 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -50,32 +43,34 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeiq.R
 import com.wakeiq.domain.model.MotionSensitivity
 
-private val CardPaletteBackgrounds = listOf(
-    Color.Unspecified,
-    Color(0xFFFFFBEB),
-    Color(0xFFFFF1F2),
-    Color(0xFFECFDF5),
-    Color(0xFFF0F9FF),
-    Color(0xFFF5F3FF),
-)
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showBlueLightDialog by remember { mutableStateOf(false) }
+    var showSmartWindowInfo by remember { mutableStateOf(false) }
+    var showRampInfo by remember { mutableStateOf(false) }
 
     if (showBlueLightDialog) {
-        AlertDialog(
-            onDismissRequest = { showBlueLightDialog = false },
-            title = { Text(stringResource(R.string.blue_light_tooltip_title)) },
-            text = { Text(stringResource(R.string.blue_light_tooltip_body)) },
-            confirmButton = {
-                TextButton(onClick = { showBlueLightDialog = false }) {
-                    Text(stringResource(R.string.tooltip_ok))
-                }
-            },
+        InfoDialog(
+            title = stringResource(R.string.blue_light_tooltip_title),
+            body = stringResource(R.string.blue_light_tooltip_body),
+            onDismiss = { showBlueLightDialog = false },
+        )
+    }
+    if (showSmartWindowInfo) {
+        InfoDialog(
+            title = stringResource(R.string.smart_window_info_title),
+            body = stringResource(R.string.smart_window_info_body),
+            onDismiss = { showSmartWindowInfo = false },
+        )
+    }
+    if (showRampInfo) {
+        InfoDialog(
+            title = stringResource(R.string.ramp_duration_info_title),
+            body = stringResource(R.string.ramp_duration_info_body),
+            onDismiss = { showRampInfo = false },
         )
     }
 
@@ -101,7 +96,10 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
         ) {
             // Smart wake defaults
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.smart_window_title), style = MaterialTheme.typography.titleMedium)
+                SettingTitleRow(
+                    title = stringResource(R.string.smart_window_title),
+                    onInfo = { showSmartWindowInfo = true },
+                )
                 Text(
                     stringResource(R.string.smart_window_desc, uiState.defaultSmartWindowMinutes),
                     style = MaterialTheme.typography.bodyMedium,
@@ -116,7 +114,10 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.ramp_duration_title), style = MaterialTheme.typography.titleMedium)
+                SettingTitleRow(
+                    title = stringResource(R.string.ramp_duration_title),
+                    onInfo = { showRampInfo = true },
+                )
                 Text(
                     stringResource(R.string.ramp_duration_desc, uiState.defaultRampDurationMinutes),
                     style = MaterialTheme.typography.bodyMedium,
@@ -157,39 +158,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             HorizontalDivider()
 
             // Display
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.warm_hue_title), style = MaterialTheme.typography.titleMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val hueLabels = listOf(
-                        stringResource(R.string.warm_hue_none),
-                        stringResource(R.string.warm_hue_amber),
-                        stringResource(R.string.warm_hue_rose),
-                        stringResource(R.string.warm_hue_sage),
-                        stringResource(R.string.warm_hue_ocean),
-                        stringResource(R.string.warm_hue_violet),
-                    )
-                    hueLabels.forEachIndexed { index, label ->
-                        FilterChip(
-                            selected = index == uiState.warmHueIndex,
-                            onClick = { viewModel.setWarmHueIndex(index) },
-                            leadingIcon = if (index > 0) {
-                                {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .clip(CircleShape)
-                                            .background(CardPaletteBackgrounds[index]),
-                                    )
-                                }
-                            } else {
-                                null
-                            },
-                            label = { Text(label) },
-                        )
-                    }
-                }
-            }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -279,4 +247,37 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             }
         }
     }
+}
+
+@Composable
+private fun SettingTitleRow(title: String, onInfo: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onInfo, modifier = Modifier.size(40.dp)) {
+            Icon(
+                Icons.Default.Info,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoDialog(title: String, body: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(body) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.tooltip_ok))
+            }
+        },
+    )
 }

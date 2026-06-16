@@ -44,7 +44,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeiq.R
-import com.wakeiq.data.service.AlarmForegroundService
 
 @Composable
 fun PermissionsScreen(onDone: () -> Unit, viewModel: PermissionsViewModel = hiltViewModel()) {
@@ -154,14 +153,9 @@ fun PermissionsScreen(onDone: () -> Unit, viewModel: PermissionsViewModel = hilt
                                     ),
                                 )
                             PermissionType.DND_OVERRIDE ->
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    context.startActivity(
-                                        Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
-                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                            putExtra(Settings.EXTRA_CHANNEL_ID, AlarmForegroundService.CHANNEL_ID)
-                                        },
-                                    )
-                                }
+                                context.startActivity(
+                                    Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS),
+                                )
                         }
                     },
                 )

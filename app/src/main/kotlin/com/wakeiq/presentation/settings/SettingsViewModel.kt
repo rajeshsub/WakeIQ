@@ -18,7 +18,6 @@ data class SettingsUiState(
     val defaultMotionSensitivity: MotionSensitivity = MotionSensitivity.MEDIUM,
     val defaultSnoozeMinutes: Int = 9,
     val blueLightReductionEnabled: Boolean = true,
-    val warmHueIndex: Int = 0,
     val use24HourClock: Boolean = false,
 )
 
@@ -39,8 +38,6 @@ class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) :
         )
     }.combine(prefs.blueLightReductionEnabled) { state, blue ->
         state.copy(blueLightReductionEnabled = blue)
-    }.combine(prefs.warmHueIndex) { state, hue ->
-        state.copy(warmHueIndex = hue)
     }.combine(prefs.use24HourClock) { state, is24Hour ->
         state.copy(use24HourClock = is24Hour)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
@@ -59,10 +56,6 @@ class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) :
 
     fun setBlueLightReduction(enabled: Boolean) = viewModelScope.launch {
         prefs.setBlueLightReduction(enabled)
-    }
-
-    fun setWarmHueIndex(index: Int) = viewModelScope.launch {
-        prefs.setWarmHueIndex(index)
     }
 
     fun setUse24HourClock(enabled: Boolean) = viewModelScope.launch {

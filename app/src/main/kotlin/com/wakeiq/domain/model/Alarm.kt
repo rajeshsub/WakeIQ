@@ -15,6 +15,7 @@ data class Alarm(
     val snoozeMinutes: Int = 9,
     val label: String = "",
     val useSmartWake: Boolean = true,
+    val colorIndex: Int = 0,
 ) {
     val isRecurring: Boolean get() = daysOfWeek.isNotEmpty()
 

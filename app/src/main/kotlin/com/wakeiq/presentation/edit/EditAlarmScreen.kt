@@ -1,8 +1,10 @@
 package com.wakeiq.presentation.edit
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -47,6 +50,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,6 +61,7 @@ import com.wakeiq.domain.model.BundledSound
 import com.wakeiq.domain.model.MotionSensitivity
 import com.wakeiq.domain.model.SoundCategory
 import com.wakeiq.domain.model.SoundType
+import com.wakeiq.presentation.AlarmPalettes
 import java.time.DayOfWeek
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -74,9 +80,18 @@ fun EditAlarmScreen(
         }
     }
 
+    val context = LocalContext.current
+    // OpenDocument (not GetContent) yields a URI we can persist, so the chosen sound survives reboots.
     val audioPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent(),
-    ) { uri: Uri? -> uri?.let { viewModel.setCustomSound(it) } }
+        ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        uri?.let {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            viewModel.setCustomSound(it)
+        }
+    }
 
     var showSmartWakeDialog by remember { mutableStateOf(false) }
     var showMotionDialog by remember { mutableStateOf(false) }
@@ -165,13 +180,20 @@ fun EditAlarmScreen(
             }
 
             // Repeat / day selection
-            Text(text = stringResource(R.string.every_day), style = MaterialTheme.typography.titleMedium)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = uiState.daysOfWeek.size == 7,
-                    onClick = viewModel::toggleAllDays,
-                    label = { Text(stringResource(R.string.repeat_daily)) },
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = uiState.daysOfWeek.size == 7,
+                    onCheckedChange = { viewModel.toggleAllDays() },
                 )
+                Text(
+                    text = stringResource(R.string.every_day),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DayOfWeek.entries.forEach { day ->
                     FilterChip(
                         selected = day in uiState.daysOfWeek,
@@ -189,6 +211,38 @@ fun EditAlarmScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
+
+            // Card colour
+            Text(stringResource(R.string.warm_hue_title), style = MaterialTheme.typography.titleMedium)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val colorLabels = listOf(
+                    stringResource(R.string.warm_hue_none),
+                    stringResource(R.string.warm_hue_amber),
+                    stringResource(R.string.warm_hue_rose),
+                    stringResource(R.string.warm_hue_sage),
+                    stringResource(R.string.warm_hue_ocean),
+                    stringResource(R.string.warm_hue_violet),
+                )
+                AlarmPalettes.forEachIndexed { index, palette ->
+                    FilterChip(
+                        selected = index == uiState.colorIndex,
+                        onClick = { viewModel.setColorIndex(index) },
+                        leadingIcon = if (palette.isCustom) {
+                            {
+                                Box(
+                                    modifier = Modifier
+                                        .size(14.dp)
+                                        .clip(CircleShape)
+                                        .background(palette.background),
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                        label = { Text(colorLabels[index]) },
+                    )
+                }
+            }
 
             HorizontalDivider()
 
@@ -300,7 +354,7 @@ fun EditAlarmScreen(
             }
 
             TextButton(
-                onClick = { audioPickerLauncher.launch("audio/*") },
+                onClick = { audioPickerLauncher.launch(arrayOf("audio/*")) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(

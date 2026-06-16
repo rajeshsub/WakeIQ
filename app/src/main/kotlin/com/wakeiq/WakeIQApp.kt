@@ -58,7 +58,7 @@ class WakeIQApp : Application() {
                 NotificationManager.IMPORTANCE_HIGH,
             ).apply {
                 description = getString(R.string.notif_channel_alarm_desc)
-                setShowBadge(false)
+                setShowBadge(true)
                 setSound(null, null)
                 enableVibration(true)
                 setBypassDnd(true)
