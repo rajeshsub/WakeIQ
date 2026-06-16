@@ -193,28 +193,39 @@ fun EditAlarmScreen(
             HorizontalDivider()
 
             // Smart wake checkbox
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = uiState.useSmartWake,
-                    onCheckedChange = viewModel::setUseSmartWake,
-                )
-                Text(
-                    text = stringResource(R.string.smart_wake_label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(
-                    onClick = { showSmartWakeDialog = true },
-                    modifier = Modifier.size(40.dp),
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Checkbox(
+                        checked = uiState.useSmartWake && !uiState.isNapDuration,
+                        onCheckedChange = viewModel::setUseSmartWake,
+                        enabled = !uiState.isNapDuration,
+                    )
+                    Text(
+                        text = stringResource(R.string.smart_wake_label),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = { showSmartWakeDialog = true },
+                        modifier = Modifier.size(40.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                if (uiState.isNapDuration) {
+                    Text(
+                        text = stringResource(R.string.smart_wake_nap_unavailable),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 12.dp),
                     )
                 }
             }

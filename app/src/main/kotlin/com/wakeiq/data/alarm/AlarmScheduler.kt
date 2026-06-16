@@ -87,18 +87,24 @@ class AlarmScheduler @Inject constructor(
 
         /**
          * Pure scheduling decision, isolated from Android so it can be unit-tested.
-         * Smart Wake (with a window that still lies in the future) is driven by a dedicated
-         * exact alarm for the ring moment, so the background-activity-start exemption is valid
-         * when the alarm actually rings, rather than relying on an in-process delay.
+         * The ramp must finish by the target time T, so the ring trigger fires at T minus the ramp
+         * duration. Smart Wake additionally schedules a monitor trigger at T minus the smart window,
+         * giving motion detection a chance to start the ramp even earlier. If the smart window is no
+         * wider than the ramp, the monitor would not precede the ring, so it is skipped. A ring start
+         * already in the past (very short alarm) falls back to firing at T.
          */
         internal fun planTriggers(alarm: Alarm, triggerAt: ZonedDateTime, now: ZonedDateTime): List<ScheduledTrigger> {
+            val rampStart = triggerAt.minusMinutes(alarm.rampDurationMinutes.toLong())
+            val ringTriggerTime = if (rampStart.isAfter(now)) rampStart else triggerAt
             val ring = ScheduledTrigger(
                 AlarmReceiver.PHASE_RING,
                 ringRequestCode(alarm.id),
-                triggerAt.toInstant().toEpochMilli(),
+                ringTriggerTime.toInstant().toEpochMilli(),
             )
             val windowStart = triggerAt.minusMinutes(alarm.smartWindowMinutes.toLong())
-            val useWindow = alarm.useSmartWake && alarm.smartWindowMinutes > 0 && windowStart.isAfter(now)
+            // The monitor window must open in the future and close before the ramp starts.
+            val windowIsUsable = windowStart.isAfter(now) && windowStart.isBefore(rampStart)
+            val useWindow = alarm.useSmartWake && alarm.smartWindowMinutes > 0 && windowIsUsable
             return if (useWindow) {
                 listOf(
                     ScheduledTrigger(

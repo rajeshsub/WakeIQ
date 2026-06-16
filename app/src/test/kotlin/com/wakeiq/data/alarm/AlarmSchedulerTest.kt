@@ -88,4 +88,58 @@ class AlarmSchedulerTest {
         assertEquals(1, triggers.size)
         assertEquals(AlarmReceiver.PHASE_RING, triggers.single().phase)
     }
+
+    @Test
+    fun `ring trigger fires at the ramp start, not the target time`() {
+        val now = ZonedDateTime.now()
+        val triggerAt = now.plusHours(2)
+        val alarm = Alarm(
+            hour = 7,
+            minute = 0,
+            useSmartWake = true,
+            smartWindowMinutes = 30,
+            rampDurationMinutes = 5,
+        )
+
+        val triggers = AlarmScheduler.planTriggers(alarm, triggerAt, now)
+        val ring = triggers.first { it.phase == AlarmReceiver.PHASE_RING }
+
+        val expectedRampStart = triggerAt.minusMinutes(5).toInstant().toEpochMilli()
+        assertEquals(expectedRampStart, ring.triggerAtMillis, "ring must fire at T minus the ramp duration")
+    }
+
+    @Test
+    fun `monitor trigger is skipped when the smart window is no wider than the ramp`() {
+        val now = ZonedDateTime.now()
+        val triggerAt = now.plusHours(1)
+        val alarm = Alarm(
+            hour = 7,
+            minute = 0,
+            useSmartWake = true,
+            smartWindowMinutes = 5,
+            rampDurationMinutes = 10,
+        )
+
+        val triggers = AlarmScheduler.planTriggers(alarm, triggerAt, now)
+
+        assertEquals(1, triggers.size)
+        assertEquals(AlarmReceiver.PHASE_RING, triggers.single().phase)
+    }
+
+    @Test
+    fun `very short alarm falls back to ringing at the target time`() {
+        val now = ZonedDateTime.now()
+        val triggerAt = now.plusMinutes(3)
+        val alarm = Alarm(
+            hour = 7,
+            minute = 0,
+            useSmartWake = false,
+            rampDurationMinutes = 5,
+        )
+
+        val triggers = AlarmScheduler.planTriggers(alarm, triggerAt, now)
+
+        assertEquals(1, triggers.size)
+        assertEquals(triggerAt.toInstant().toEpochMilli(), triggers.single().triggerAtMillis)
+    }
 }

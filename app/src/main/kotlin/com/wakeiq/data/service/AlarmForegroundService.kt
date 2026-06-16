@@ -313,7 +313,7 @@ class AlarmForegroundService : Service() {
             BundledSound.MORNING_ROOSTERS,
             BundledSound.THUNDERSTORM,
             BundledSound.INDIAN_HARP,
-            BundledSound.TRAIN_STATION,
+            BundledSound.OCEAN_COAST,
         )
 
         fun start(context: Context, alarmId: Long, phase: String = AlarmReceiver.PHASE_RING) {

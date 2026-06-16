@@ -32,7 +32,7 @@
 
     <!-- Smart window -->
     <string name="smart_window_title">Smart wake window</string>
-    <string name="smart_window_desc">Start alarm up to %d min early if you\'re in light sleep</string>
+    <string name="smart_window_desc">Alarm window opens %d min before your set time</string>
     <string name="smart_window_off">Disabled. Alarm fires exactly on time.</string>
     <string name="ramp_duration_title">Gradual wake duration</string>
     <string name="ramp_duration_desc">Sound and light take %d min to reach full intensity</string>
@@ -67,18 +67,10 @@
     <string name="sound_indian_harp">Indian harp</string>
     <string name="sound_wind_chimes">Wind chimes</string>
 
-    <!-- Ambient Places -->
-    <string name="sound_cafe">Café</string>
-    <string name="sound_airport">Airport terminal</string>
-    <string name="sound_busy_street">Busy street</string>
-    <string name="sound_office">Office</string>
-    <string name="sound_train_station">Train station</string>
-
     <!-- Sound categories -->
     <string name="sound_category_nature">Nature &amp; Weather</string>
     <string name="sound_category_farm">Farm &amp; Animals</string>
     <string name="sound_category_music">Music &amp; Melodies</string>
-    <string name="sound_category_places">Ambient Places</string>
 
     <!-- Alarm firing screen -->
     <string name="alarm_dismiss">Dismiss</string>
@@ -159,6 +151,7 @@
 
     <!-- Tooltip / explainer strings -->
     <string name="smart_wake_label">Smart wake</string>
+    <string name="smart_wake_nap_unavailable">Not available for alarms under 90 minutes away</string>
     <string name="smart_wake_tooltip_title">What is Smart wake?</string>
     <string name="smart_wake_tooltip_body">Most alarm apps yank you out of deep sleep, causing grogginess. WakeIQ is different.\n\nHuman sleep moves through cycles of light (N1/N2), deep (N3/slow-wave), and REM stages roughly every 90 minutes. Waking during deep sleep causes sleep inertia (that heavy, foggy feeling).\n\nSmart wake monitors your phone\'s accelerometer during a window before your alarm. More movement = lighter sleep stage. If light sleep is detected early, the alarm triggers then so you surface naturally. If no light sleep is detected, the alarm fires at your set time as normal.\n\nConfigure the window duration in Settings.</string>
     <string name="motion_sensitivity_tooltip_title">Why motion sensitivity?</string>

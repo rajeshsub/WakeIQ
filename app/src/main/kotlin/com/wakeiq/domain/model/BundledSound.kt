@@ -24,18 +24,10 @@ enum class BundledSound(val assetFile: String, val displayNameRes: Int, val cate
     PIANO("music_piano.mp3", R.string.sound_piano, SoundCategory.MUSIC),
     INDIAN_HARP("music_indian_harp.mp3", R.string.sound_indian_harp, SoundCategory.MUSIC),
     WIND_CHIMES("music_wind_chimes.mp3", R.string.sound_wind_chimes, SoundCategory.MUSIC),
-
-    // Ambient Places
-    CAFE("places_cafe.mp3", R.string.sound_cafe, SoundCategory.PLACES),
-    AIRPORT("places_airport.mp3", R.string.sound_airport, SoundCategory.PLACES),
-    BUSY_STREET("places_busy_street.mp3", R.string.sound_busy_street, SoundCategory.PLACES),
-    OFFICE("places_office.mp3", R.string.sound_office, SoundCategory.PLACES),
-    TRAIN_STATION("places_train_station.mp3", R.string.sound_train_station, SoundCategory.PLACES),
 }
 
 enum class SoundCategory(val displayNameRes: Int) {
     NATURE(R.string.sound_category_nature),
     FARM(R.string.sound_category_farm),
     MUSIC(R.string.sound_category_music),
-    PLACES(R.string.sound_category_places),
 }

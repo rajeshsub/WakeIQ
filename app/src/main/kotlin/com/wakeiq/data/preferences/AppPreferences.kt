@@ -81,7 +81,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     }
 
     private companion object {
-        const val DEFAULT_SMART_WINDOW_MINUTES = 20
+        const val DEFAULT_SMART_WINDOW_MINUTES = 30
         const val DEFAULT_RAMP_DURATION_MINUTES = 5
         const val DEFAULT_SNOOZE_MINUTES = 9
 

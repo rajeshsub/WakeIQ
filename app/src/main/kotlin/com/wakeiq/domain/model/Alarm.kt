@@ -9,7 +9,7 @@ data class Alarm(
     val daysOfWeek: Set<DayOfWeek> = emptySet(),
     val isEnabled: Boolean = true,
     val soundConfig: SoundConfig = SoundConfig(),
-    val smartWindowMinutes: Int = 20,
+    val smartWindowMinutes: Int = 30,
     val rampDurationMinutes: Int = 5,
     val motionSensitivity: MotionSensitivity = MotionSensitivity.MEDIUM,
     val snoozeMinutes: Int = 9,

@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.Duration
+import java.time.ZonedDateTime
 import javax.inject.Inject
 
 data class EditAlarmUiState(
@@ -37,6 +39,7 @@ data class EditAlarmUiState(
     val motionSensitivity: MotionSensitivity = MotionSensitivity.MEDIUM,
     val snoozeMinutes: Int = 9,
     val useSmartWake: Boolean = true,
+    val isNapDuration: Boolean = false,
     val is24Hour: Boolean = false,
     val isSaving: Boolean = false,
     val savedOrDeleted: Boolean = false,
@@ -55,6 +58,10 @@ class EditAlarmViewModel @Inject constructor(
 
     private var previewJob: Job? = null
 
+    // Tracks the smart-wake choice the user actually made, so it can be restored when the alarm time
+    // moves back out of nap range. The displayed useSmartWake is forced off while in nap range.
+    private var smartWakeUserChoice: Boolean = true
+
     private val alarmId: Long = savedStateHandle.get<Long>("id") ?: -1L
 
     private val _uiState = MutableStateFlow(EditAlarmUiState())
@@ -66,18 +73,23 @@ class EditAlarmViewModel @Inject constructor(
             if (alarmId == -1L) {
                 val sensitivity = prefs.defaultMotionSensitivity.first()
                 val snooze = prefs.defaultSnoozeMinutes.first()
+                val nap = isNapDuration(_uiState.value.hour, _uiState.value.minute)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         isNew = true,
                         motionSensitivity = sensitivity,
                         snoozeMinutes = snooze,
+                        isNapDuration = nap,
+                        useSmartWake = !nap && smartWakeUserChoice,
                         is24Hour = is24Hour,
                     )
                 }
             } else {
                 val alarm = alarmRepository.getById(alarmId)
                 if (alarm != null) {
+                    smartWakeUserChoice = alarm.useSmartWake
+                    val nap = isNapDuration(alarm.hour, alarm.minute)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -89,7 +101,8 @@ class EditAlarmViewModel @Inject constructor(
                             soundConfig = alarm.soundConfig,
                             motionSensitivity = alarm.motionSensitivity,
                             snoozeMinutes = alarm.snoozeMinutes,
-                            useSmartWake = alarm.useSmartWake,
+                            isNapDuration = nap,
+                            useSmartWake = !nap && alarm.useSmartWake,
                             is24Hour = is24Hour,
                         )
                     }
@@ -98,7 +111,26 @@ class EditAlarmViewModel @Inject constructor(
         }
     }
 
-    fun setTime(hour: Int, minute: Int) = _uiState.update { it.copy(hour = hour, minute = minute) }
+    fun setTime(hour: Int, minute: Int) {
+        val nap = isNapDuration(hour, minute)
+        _uiState.update {
+            it.copy(
+                hour = hour,
+                minute = minute,
+                isNapDuration = nap,
+                useSmartWake = !nap && smartWakeUserChoice,
+            )
+        }
+    }
+
+    // A nap is any alarm whose next occurrence is under one full sleep cycle (90 min) away. Smart
+    // wake assumes a full sleep cycle, so it is disabled for naps. Next occurrence is the selected
+    // time today if still ahead, otherwise the same time tomorrow.
+    private fun isNapDuration(hour: Int, minute: Int, now: ZonedDateTime = ZonedDateTime.now()): Boolean {
+        val candidate = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
+        val next = if (candidate.isAfter(now)) candidate else candidate.plusDays(1)
+        return Duration.between(now, next).toMinutes() < NAP_THRESHOLD_MINUTES
+    }
 
     fun toggleDay(day: DayOfWeek) = _uiState.update {
         val days = it.daysOfWeek.toMutableSet()
@@ -129,7 +161,11 @@ class EditAlarmViewModel @Inject constructor(
 
     fun setSensitivity(s: MotionSensitivity) = _uiState.update { it.copy(motionSensitivity = s) }
 
-    fun setUseSmartWake(enabled: Boolean) = _uiState.update { it.copy(useSmartWake = enabled) }
+    fun setUseSmartWake(enabled: Boolean) {
+        if (_uiState.value.isNapDuration) return
+        smartWakeUserChoice = enabled
+        _uiState.update { it.copy(useSmartWake = enabled) }
+    }
 
     fun save() {
         val state = _uiState.value
@@ -137,6 +173,8 @@ class EditAlarmViewModel @Inject constructor(
         viewModelScope.launch {
             val smartWindow = prefs.defaultSmartWindowMinutes.first()
             val ramp = prefs.defaultRampDurationMinutes.first()
+            // Final guard: a nap alarm is never saved with smart wake, regardless of stale state.
+            val effectiveSmartWake = state.useSmartWake && !state.isNapDuration
             val alarm = Alarm(
                 id = if (state.isNew) 0L else alarmId,
                 hour = state.hour,
@@ -144,12 +182,12 @@ class EditAlarmViewModel @Inject constructor(
                 daysOfWeek = state.daysOfWeek,
                 isEnabled = true,
                 soundConfig = state.soundConfig,
-                smartWindowMinutes = if (state.useSmartWake) smartWindow else 0,
+                smartWindowMinutes = if (effectiveSmartWake) smartWindow else 0,
                 rampDurationMinutes = ramp,
                 motionSensitivity = state.motionSensitivity,
                 snoozeMinutes = state.snoozeMinutes,
                 label = state.label,
-                useSmartWake = state.useSmartWake,
+                useSmartWake = effectiveSmartWake,
             )
             val savedId = saveAlarm(alarm)
             scheduler.schedule(alarm.copy(id = savedId))
@@ -175,5 +213,6 @@ class EditAlarmViewModel @Inject constructor(
 
     companion object {
         private const val PREVIEW_DURATION_MS = 6_000L
+        private const val NAP_THRESHOLD_MINUTES = 90
     }
 }
