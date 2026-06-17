@@ -6,10 +6,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.wakeiq.R
 import com.wakeiq.data.alarm.AlarmReceiver
@@ -78,9 +80,19 @@ class AlarmForegroundService : Service() {
     // after the async DB load. Monitor-phase starts only show a waiting notification (no ring yet).
     private fun postInitialForeground(alarmId: Long, phase: String) {
         if (phase == AlarmReceiver.PHASE_RING) {
-            startForeground(NOTIFICATION_ID_ESCALATION, buildEscalationNotification(alarmId, null))
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID_ESCALATION,
+                buildEscalationNotification(alarmId, null),
+                fgsType(),
+            )
         } else {
-            startForeground(NOTIFICATION_ID, buildWaitingNotification(null))
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                buildWaitingNotification(null),
+                fgsType(),
+            )
         }
     }
 
@@ -197,6 +209,18 @@ class AlarmForegroundService : Service() {
         super.onDestroy()
     }
 
+    // The alarm fires from a setAlarmClock() broadcast, which grants the receiver a temporary
+    // exemption to start a while-in-use foreground service, so mediaPlayback (the correct semantic
+    // type for ramping alarm audio) is permitted under that exemption on Android 14/15. Do not add
+    // systemExempted here: it requires the FOREGROUND_SERVICE_SYSTEM_EXEMPTED permission plus a
+    // narrow platform allowlist this app does not qualify for, so requesting it throws a
+    // SecurityException at startForeground() and crashes the service the moment the alarm fires.
+    private fun fgsType(): Int = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+        else -> 0
+    }
+
     private fun acquireWakeLock() {
         releaseWakeLock()
         val pm = getSystemService(PowerManager::class.java)
@@ -253,7 +277,12 @@ class AlarmForegroundService : Service() {
             Timber.w("USE_FULL_SCREEN_INTENT not granted - alarm may not launch full-screen")
         }
         // Single post on NOTIFICATION_ID_ESCALATION (the same id the initial RING post used).
-        startForeground(NOTIFICATION_ID_ESCALATION, buildEscalationNotification(alarm.id, alarm))
+        ServiceCompat.startForeground(
+            this,
+            NOTIFICATION_ID_ESCALATION,
+            buildEscalationNotification(alarm.id, alarm),
+            fgsType(),
+        )
         nm.cancel(NOTIFICATION_ID)
     }
 

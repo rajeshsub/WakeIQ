@@ -17,10 +17,13 @@
 
     <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <!-- Notifications (API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Override Do Not Disturb / Modes access -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <!-- Screen brightness control -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS"
@@ -77,11 +80,7 @@
         <service
             android:name=".data.service.AlarmForegroundService"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Plays a scheduled alarm and shows the full screen alarm UI" />
-        </service>
+            android:foregroundServiceType="mediaPlayback" />
 
         <receiver
             android:name=".data.alarm.AlarmReceiver"

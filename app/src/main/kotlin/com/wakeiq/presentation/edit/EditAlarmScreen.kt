@@ -189,7 +189,7 @@ fun EditAlarmScreen(
                     onCheckedChange = { viewModel.toggleAllDays() },
                 )
                 Text(
-                    text = stringResource(R.string.every_day),
+                    text = stringResource(R.string.repeat_daily),
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }

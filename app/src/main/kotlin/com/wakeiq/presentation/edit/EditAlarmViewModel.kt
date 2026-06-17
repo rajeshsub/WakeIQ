@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Duration
+import java.time.LocalDate
 import java.time.ZonedDateTime
 import javax.inject.Inject
 
@@ -79,6 +80,7 @@ class EditAlarmViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         isNew = true,
+                        daysOfWeek = setOf(LocalDate.now().dayOfWeek),
                         motionSensitivity = sensitivity,
                         snoozeMinutes = snooze,
                         isNapDuration = nap,
