@@ -266,8 +266,9 @@ class AlarmForegroundService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(activityPi)
             .setFullScreenIntent(activityPi, true)
-            .addAction(buildSnoozeAction())
-            .addAction(buildDismissAction())
+            // No Snooze/Dismiss actions: the full-screen alarm UI already provides these, so
+            // duplicating them on the notification is redundant. The notification still exists only
+            // because a foreground service requires one and the full-screen intent must ride on it.
             .build()
     }
 
@@ -301,26 +302,6 @@ class AlarmForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-    private fun buildDismissAction(): NotificationCompat.Action {
-        val pi = PendingIntent.getService(
-            this,
-            REQUEST_CODE_DISMISS,
-            Intent(this, AlarmForegroundService::class.java).apply { action = ACTION_DISMISS },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        return NotificationCompat.Action(0, getString(R.string.notif_alarm_dismiss), pi)
-    }
-
-    private fun buildSnoozeAction(): NotificationCompat.Action {
-        val pi = PendingIntent.getService(
-            this,
-            REQUEST_CODE_SNOOZE,
-            Intent(this, AlarmForegroundService::class.java).apply { action = ACTION_SNOOZE },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        return NotificationCompat.Action(0, getString(R.string.notif_alarm_snooze), pi)
-    }
-
     companion object {
         const val CHANNEL_ID = "alarm_channel_v3"
         const val NOTIFICATION_ID = 1001
@@ -333,8 +314,6 @@ class AlarmForegroundService : Service() {
         private const val MILLIS_PER_MINUTE = 60_000L
         private const val DEFAULT_RAMP_MINUTES = 5L
         private const val SOUND_SWITCH_INTERVAL_MS = 120_000L
-        private const val REQUEST_CODE_DISMISS = 2001
-        private const val REQUEST_CODE_SNOOZE = 2002
         private const val WAKE_LOCK_TAG = "WakeIQ:alarm"
         private const val WAKE_LOCK_TIMEOUT_MS = 60_000L
 

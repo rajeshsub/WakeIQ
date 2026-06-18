@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -28,7 +29,20 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         forceAlarmStreamAudible()
         val uri = resolveUri(soundConfig)
         player = ExoPlayer.Builder(context).build().also { exo ->
-            exo.setAudioAttributes(alarmAudioAttributes(), true)
+            // Surface playback errors: ExoPlayer otherwise fails silently, which once hid an alarm
+            // crash for a long time.
+            exo.addListener(
+                object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        Timber.e(error, "Alarm playback error: ${error.errorCodeName}")
+                    }
+                },
+            )
+            // handleAudioFocus MUST be false for USAGE_ALARM: media3 throws
+            // IllegalArgumentException ("Automatic handling of audio focus is only available for
+            // USAGE_MEDIA and USAGE_GAME") otherwise, which crashed the app on every alarm. An alarm
+            // should ring regardless of focus anyway, so we never want media3 managing focus here.
+            exo.setAudioAttributes(alarmAudioAttributes(), false)
             routeToBuiltInSpeaker(exo)
             exo.setMediaItem(MediaItem.fromUri(uri))
             exo.repeatMode = Player.REPEAT_MODE_ALL
