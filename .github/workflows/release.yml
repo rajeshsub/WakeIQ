@@ -30,17 +30,19 @@ jobs:
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
 
-      - name: Build signed release APK
-        run: ./gradlew assembleRelease
+      - name: Build signed release APKs
+        run: ./gradlew assembleFullRelease assembleFossRelease
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
 
-      - name: Upload signed APK to GitHub Release
+      - name: Upload signed APKs to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/app-release.apk
+          files: |
+            app/build/outputs/apk/full/release/app-full-release.apk
+            app/build/outputs/apk/foss/release/app-foss-release.apk
           generate_release_notes: true
 
       - name: Clean up keystore

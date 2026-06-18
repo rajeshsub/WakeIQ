@@ -38,13 +38,13 @@ jobs:
         run: ./gradlew detekt
 
       - name: Run Android Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew lintFullDebug
 
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testFullDebugUnitTest
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleFullDebug
 
       - name: Upload lint results
         if: always()
@@ -52,7 +52,7 @@ jobs:
         with:
           name: lint-results
           path: |
-            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-full-debug.html
             app/build/reports/detekt/
             app/build/reports/ktlint/
 
@@ -98,7 +98,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          script: ./gradlew connectedAndroidTest
+          script: ./gradlew connectedFullDebugAndroidTest
 
       - name: Upload instrumented test results
         if: always()

@@ -2,6 +2,8 @@
 
 A free, open-source Android alarm app that wakes you gently, by working with your sleep cycle instead of against it.
 
+![Feature graphic](play-store/feature-graphic.png)
+
 ---
 
 ## The problem with normal alarms
@@ -46,6 +48,20 @@ You will always wake by your set time. If you stay in a light stage through the 
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="play-store/screenshots/1.png" width="180"/></td>
+    <td><img src="play-store/screenshots/2.png" width="180"/></td>
+    <td><img src="play-store/screenshots/3.png" width="180"/></td>
+    <td><img src="play-store/screenshots/4.png" width="180"/></td>
+    <td><img src="play-store/screenshots/5.png" width="180"/></td>
+  </tr>
+</table>
+
+---
+
 ## Free. Open source. Private. Forever.
 
 WakeIQ costs nothing. No premium tier. No subscription. No locked features.
@@ -77,17 +93,20 @@ Your data never leaves your device. No analytics, no telemetry, no crash reporti
 Requires JDK 17 and Android SDK (compile SDK 35).
 
 ```bash
-# Debug APK
-./gradlew assembleDebug
+# Debug APK (full flavour)
+./gradlew assembleFullDebug
+
+# Release APKs (full + FOSS)
+./gradlew assembleFullRelease assembleFossRelease
 
 # Unit tests
-./gradlew testDebugUnitTest
+./gradlew testFullDebugUnitTest
 
 # Instrumented tests (requires connected device or emulator)
-./gradlew connectedDebugAndroidTest
+./gradlew connectedFullDebugAndroidTest
 
 # Lint and style checks
-./gradlew ktlintCheck detekt lintDebug
+./gradlew ktlintCheck detekt lintFullDebug
 ```
 
 ---
