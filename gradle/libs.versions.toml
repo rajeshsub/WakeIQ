@@ -36,7 +36,6 @@ kotlinSerialization = "1.7.3"
 
 # Logging / observability
 timber = "5.0.1"
-acra = "5.11.1"
 leakCanary = "2.14"
 
 # Testing – local
@@ -103,8 +102,6 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Logging / observability
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
-acra-core = { group = "ch.acra", name = "acra-core", version.ref = "acra" }
-acra-notification = { group = "ch.acra", name = "acra-notification", version.ref = "acra" }
 leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakCanary" }
 
 # Testing – local

@@ -147,12 +147,6 @@
     <string name="notif_alarm_dismiss">Dismiss</string>
     <string name="notif_alarm_snooze">Snooze</string>
 
-    <!-- ACRA crash reports -->
-    <string name="acra_notification_title">WakeIQ crashed</string>
-    <string name="acra_notification_text">Tap to send an anonymous crash report and help fix this bug.</string>
-    <string name="acra_notification_send">Send report</string>
-    <string name="acra_notification_dismiss">Dismiss</string>
-
     <!-- Tooltip / explainer strings -->
     <string name="smart_wake_label">Smart wake</string>
     <string name="smart_wake_nap_unavailable">Not available for alarms under 90 minutes away</string>

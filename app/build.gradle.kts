@@ -137,8 +137,6 @@ dependencies {
 
     // Logging / observability
     implementation(libs.timber)
-    implementation(libs.acra.core)
-    implementation(libs.acra.notification)
     debugImplementation(libs.leakcanary.android)
 
     // Detekt formatting plugin

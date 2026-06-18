@@ -37,7 +37,7 @@ You will always wake by your set time. If you stay in a light stage through the 
 - Gradual sound ramp: configurable 1–15 min, defaults to 5 min
 - Screen brightness ramps alongside sound
 - Includes natural and melodic alarm sounds across nature, farm, and music categories, chosen for sleep-inertia-reducing properties. Custom audio from device storage also supported.
-- Sound preview before saving
+- Preview the sound options available for alarms
 - Motion detection enhancement (Wear OS wrist or phone-on-mattress): optional early trigger if light sleep is confirmed before the ramp start
 - Warm colour themes (Amber, Rose, Sage, Ocean, Violet)
 - Blue light reduction tint from 6 pm to 6 am
@@ -49,6 +49,8 @@ You will always wake by your set time. If you stay in a light stage through the 
 ## Free. Open source. Private. Forever.
 
 WakeIQ costs nothing. No premium tier. No subscription. No locked features.
+
+**No advertisements, ever.** The app is free and contains zero ads: no banners, no interstitials, no sponsored content.
 
 Your data never leaves your device. No analytics, no telemetry, no crash reporting, no remote servers. Nothing is transmitted anywhere. Your sleep patterns are yours.
 

@@ -82,6 +82,7 @@ class HomeViewModel @Inject constructor(
                     soundConfig = defaultSound,
                     label = "Weekdays",
                     useSmartWake = true,
+                    colorIndex = 3,
                 ),
             )
             saveAlarm(
@@ -93,6 +94,7 @@ class HomeViewModel @Inject constructor(
                     soundConfig = defaultSound,
                     label = "Weekends",
                     useSmartWake = true,
+                    colorIndex = 2,
                 ),
             )
         }
