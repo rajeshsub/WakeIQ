@@ -15,7 +15,11 @@
 .externalNativeBuild
 .cxx
 local.properties
-keystore.properties
+keystore.b*
 *.jks
 *.keystore
 .idea/
+WakeIQ.plan.md
+drafts.md
+ignore.txt
+todo.md

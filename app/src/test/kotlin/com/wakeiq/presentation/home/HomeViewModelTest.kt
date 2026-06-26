@@ -109,4 +109,42 @@ class HomeViewModelTest {
 
         coVerify { scheduler.cancel(2L) }
     }
+
+    @Test
+    fun `delete cancels the schedule and removes the alarm`() = runTest {
+        val alarm = Alarm(id = 5L, hour = 9, minute = 0)
+        every { getAlarms() } returns flowOf(listOf(alarm))
+
+        val viewModel = HomeViewModel(getAlarms, toggleAlarm, deleteAlarm, saveAlarm, scheduler, prefs)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.delete(alarm)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { scheduler.cancel(5L) }
+        coVerify { deleteAlarm(alarm) }
+    }
+
+    @Test
+    fun `seeds the two default alarms when none exist and not yet seeded`() = runTest {
+        every { prefs.defaultAlarmSeeded } returns flowOf(false)
+        every { getAlarms() } returns flowOf(emptyList())
+
+        HomeViewModel(getAlarms, toggleAlarm, deleteAlarm, saveAlarm, scheduler, prefs)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 2) { saveAlarm(any()) }
+        coVerify(exactly = 1) { prefs.markDefaultAlarmSeeded() }
+    }
+
+    @Test
+    fun `does not seed when alarms have already been seeded`() = runTest {
+        every { prefs.defaultAlarmSeeded } returns flowOf(true)
+        every { getAlarms() } returns flowOf(emptyList())
+
+        HomeViewModel(getAlarms, toggleAlarm, deleteAlarm, saveAlarm, scheduler, prefs)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { saveAlarm(any()) }
+    }
 }

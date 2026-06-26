@@ -2,6 +2,7 @@ package com.wakeiq.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wakeiq.core.InstrumentedOnly
 import com.wakeiq.data.preferences.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -16,6 +17,7 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
+@InstrumentedOnly
 class AppStateViewModel @Inject constructor(private val prefs: AppPreferences) : ViewModel() {
 
     private val _isBlueLightActive = MutableStateFlow(false)
@@ -38,13 +40,10 @@ class AppStateViewModel @Inject constructor(private val prefs: AppPreferences) :
 
     private suspend fun refreshBlueLightState() {
         val enabled = prefs.blueLightReductionEnabled.first()
-        val hour = LocalTime.now().hour
-        _isBlueLightActive.value = enabled && (hour >= BLUE_LIGHT_ON_HOUR || hour < BLUE_LIGHT_OFF_HOUR)
+        _isBlueLightActive.value = BlueLight.isActive(enabled, LocalTime.now().hour)
     }
 
     private companion object {
-        const val BLUE_LIGHT_ON_HOUR = 18
-        const val BLUE_LIGHT_OFF_HOUR = 6
         const val POLL_INTERVAL_MS = 5 * 60 * 1000L
     }
 }

@@ -109,6 +109,17 @@ Requires JDK 17 and Android SDK (compile SDK 35).
 ./gradlew ktlintCheck detekt lintFullDebug
 ```
 
+### Git hooks
+
+A fast pre-commit hook runs ktlint and detekt before each commit. Tests and
+coverage run in CI, not on commit, to keep the commit loop quick. Activate it
+once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+
 ---
 
 ## Tech stack

@@ -24,9 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
-import java.time.Duration
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import javax.inject.Inject
 
 data class EditAlarmUiState(
@@ -127,14 +125,7 @@ class EditAlarmViewModel @Inject constructor(
         }
     }
 
-    // A nap is any alarm whose next occurrence is under one full sleep cycle (90 min) away. Smart
-    // wake assumes a full sleep cycle, so it is disabled for naps. Next occurrence is the selected
-    // time today if still ahead, otherwise the same time tomorrow.
-    private fun isNapDuration(hour: Int, minute: Int, now: ZonedDateTime = ZonedDateTime.now()): Boolean {
-        val candidate = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
-        val next = if (candidate.isAfter(now)) candidate else candidate.plusDays(1)
-        return Duration.between(now, next).toMinutes() < NAP_THRESHOLD_MINUTES
-    }
+    private fun isNapDuration(hour: Int, minute: Int): Boolean = NapRule.isNap(hour, minute)
 
     fun toggleDay(day: DayOfWeek) = _uiState.update {
         val days = it.daysOfWeek.toMutableSet()
@@ -221,6 +212,5 @@ class EditAlarmViewModel @Inject constructor(
 
     companion object {
         private const val PREVIEW_DURATION_MS = 6_000L
-        private const val NAP_THRESHOLD_MINUTES = 90
     }
 }

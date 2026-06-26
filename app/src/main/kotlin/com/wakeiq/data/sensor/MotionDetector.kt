@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import com.wakeiq.core.InstrumentedOnly
 import com.wakeiq.domain.model.MotionSensitivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -18,6 +19,7 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 @Singleton
+@InstrumentedOnly
 class MotionDetector @Inject constructor(@ApplicationContext private val context: Context) {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
     private val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -25,29 +27,21 @@ class MotionDetector @Inject constructor(@ApplicationContext private val context
     private val _lightSleepDetected = Channel<Unit>(Channel.CONFLATED)
     val lightSleepDetected: Flow<Unit> = _lightSleepDetected.receiveAsFlow()
 
-    private val windowSize = 20
-    private val readings = ArrayDeque<Float>(windowSize + 1)
-
-    companion object {
-        private const val MIN_DETECTION_READINGS = 10
-        private const val SENSOR_SAMPLING_US = 200_000
+    private companion object {
+        const val SENSOR_SAMPLING_US = 200_000
     }
     private var listener: SensorEventListener? = null
-    private var threshold: Float = MotionSensitivity.MEDIUM.threshold
+    private var window = MotionWindow(MotionSensitivity.MEDIUM.threshold)
 
     fun startDetection(sensitivity: MotionSensitivity) {
-        threshold = sensitivity.threshold
-        readings.clear()
+        window = MotionWindow(sensitivity.threshold)
         listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 val mag = sqrt(
                     event.values[0].pow(2) + event.values[1].pow(2) + event.values[2].pow(2),
                 ) - SensorManager.GRAVITY_EARTH
-                readings.addLast(abs(mag))
-                if (readings.size > windowSize) readings.removeFirst()
-
-                if (readings.size >= MIN_DETECTION_READINGS && readings.stdDev() > threshold) {
-                    Timber.d("Light sleep detected (stdDev=${readings.stdDev()}, threshold=$threshold)")
+                if (window.add(abs(mag))) {
+                    Timber.d("Light sleep detected (sensitivity=$sensitivity)")
                     _lightSleepDetected.trySend(Unit)
                 }
             }
@@ -61,14 +55,7 @@ class MotionDetector @Inject constructor(@ApplicationContext private val context
     fun stopDetection() {
         listener?.let { sensorManager.unregisterListener(it) }
         listener = null
-        readings.clear()
+        window.clear()
         Timber.d("Motion detection stopped")
-    }
-
-    private fun ArrayDeque<Float>.stdDev(): Float {
-        if (size < 2) return 0f
-        val mean = sum() / size
-        val variance = sumOf { (it - mean).toDouble().pow(2) } / size
-        return sqrt(variance).toFloat()
     }
 }

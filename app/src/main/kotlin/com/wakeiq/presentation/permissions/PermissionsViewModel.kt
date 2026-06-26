@@ -10,6 +10,7 @@ import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.wakeiq.R
+import com.wakeiq.core.InstrumentedOnly
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ data class AppPermission(
 )
 
 @HiltViewModel
+@InstrumentedOnly
 class PermissionsViewModel @Inject constructor(@ApplicationContext private val context: Context) : ViewModel() {
 
     private val _permissions = MutableStateFlow(buildPermissionList())
@@ -117,6 +119,7 @@ class PermissionsViewModel @Inject constructor(@ApplicationContext private val c
     }
 }
 
+@InstrumentedOnly
 fun areCriticalPermissionsGranted(context: Context): Boolean {
     val nm = context.getSystemService(NotificationManager::class.java)
     val pm = context.getSystemService(PowerManager::class.java)
