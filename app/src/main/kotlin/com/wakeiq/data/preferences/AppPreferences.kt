@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.wakeiq.core.InstrumentedOnly
 import com.wakeiq.domain.model.MotionSensitivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_prefs")
 
 @Singleton
+@InstrumentedOnly
 class AppPreferences @Inject constructor(@ApplicationContext private val context: Context) {
     private val store = context.dataStore
 

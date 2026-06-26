@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.junit5.android)
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -19,7 +20,7 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "0.1.1"
 
         testInstrumentationRunner = "com.wakeiq.HiltTestRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -103,6 +104,75 @@ detekt {
     config.setFrom(rootProject.files("detekt.yml"))
     buildUponDefaultConfig = true
     allRules = false
+}
+
+kover {
+    // Generated machinery (Room / Hilt / Dagger / Compose) is never our logic.
+    // Kover wildcards span the package separator, but a trailing "*" is still
+    // needed to catch nested synthetic classes such as AlarmDao_Impl$2, and
+    // factory names without an "_Factory" suffix (Module_ProvideXFactory). Kover
+    // per-variant filters replace the base filters rather than merging, so this
+    // list is restated in the "logic" report below.
+    val generatedCode =
+        arrayOf(
+            "*_Impl*",
+            "*Factory*",
+            "*_MembersInjector*",
+            "*_GeneratedInjector",
+            "Hilt_*",
+            "*Hilt_*",
+            "dagger.hilt.*",
+            "hilt_aggregated_deps.*",
+            "*ComposableSingletons*",
+            "com.wakeiq.BuildConfig",
+        )
+
+    currentProject {
+        // "logic" mirrors the fullDebug unit-test run; CI exercises full only.
+        createVariant("logic") {
+            add("fullDebug")
+        }
+    }
+
+    reports {
+        // Base report (koverHtmlReportFullDebug): honest "all code minus
+        // generated" number, including UI and Android glue.
+        filters {
+            excludes {
+                classes(*generatedCode)
+            }
+        }
+
+        // Logic report (koverHtmlReportLogic): meaningful-logic coverage only.
+        // Drops untestable UI and Android glue. The @Composable annotation alone
+        // does not strip file-level composable facades, so screen/theme/nav
+        // classes are excluded by name as well. Android adapters that wrap a
+        // framework API behind a thin shell are marked @InstrumentedOnly and
+        // excluded here; their pure logic lives in separate tested units. See
+        // docs/adr/0002-coverage-exclusions.md.
+        variant("logic") {
+            filters {
+                excludes {
+                    classes(*generatedCode)
+                    classes(
+                        "*ScreenKt*",
+                        "com.wakeiq.presentation.theme.*",
+                        "com.wakeiq.presentation.navigation.*",
+                        "com.wakeiq.MainActivityKt",
+                        // DataStore delegate facade: pure wiring, sibling to the excluded AppPreferences.
+                        "com.wakeiq.data.preferences.AppPreferencesKt",
+                    )
+                    annotatedBy(
+                        "dagger.hilt.android.AndroidEntryPoint",
+                        "dagger.hilt.android.HiltAndroidApp",
+                        "dagger.Module",
+                        "androidx.compose.runtime.Composable",
+                        "com.wakeiq.core.InstrumentedOnly",
+                    )
+                }
+            }
+        }
+    }
 }
 
 dependencies {

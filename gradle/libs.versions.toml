@@ -56,6 +56,7 @@ desugar = "2.0.3"
 # Code quality
 ktlintPlugin = "12.1.2"
 detekt = "1.23.7"
+kover = "0.9.8"
 
 [libraries]
 # AndroidX
@@ -133,3 +134,4 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 junit5-android = { id = "de.mannodermaus.android-junit5", version.ref = "junit5Android" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
