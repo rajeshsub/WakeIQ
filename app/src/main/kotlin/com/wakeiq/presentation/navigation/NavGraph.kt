@@ -14,6 +14,7 @@ import com.wakeiq.presentation.edit.EditAlarmScreen
 import com.wakeiq.presentation.home.HomeScreen
 import com.wakeiq.presentation.permissions.PermissionsScreen
 import com.wakeiq.presentation.permissions.areCriticalPermissionsGranted
+import com.wakeiq.presentation.settings.PrivacyPolicyScreen
 import com.wakeiq.presentation.settings.SettingsScreen
 
 sealed class Destination(val route: String) {
@@ -23,6 +24,7 @@ sealed class Destination(val route: String) {
         fun routeFor(id: Long? = null) = if (id != null) "edit_alarm?id=$id" else "edit_alarm"
     }
     data object Settings : Destination("settings")
+    data object PrivacyPolicy : Destination("privacy_policy")
 }
 
 @Composable
@@ -78,7 +80,14 @@ fun AlarmNavGraph() {
         }
 
         composable(Destination.Settings.route) {
-            SettingsScreen(onBack = { navController.popBackStack() })
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenPrivacyPolicy = { navController.navigate(Destination.PrivacyPolicy.route) },
+            )
+        }
+
+        composable(Destination.PrivacyPolicy.route) {
+            PrivacyPolicyScreen(onBack = { navController.popBackStack() })
         }
     }
 }

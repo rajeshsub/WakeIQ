@@ -45,7 +45,11 @@ import com.wakeiq.domain.model.MotionSensitivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showBlueLightDialog by remember { mutableStateOf(false) }
@@ -244,6 +248,13 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.about_github_button))
+            }
+
+            OutlinedButton(
+                onClick = onOpenPrivacyPolicy,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Privacy Policy")
             }
         }
     }

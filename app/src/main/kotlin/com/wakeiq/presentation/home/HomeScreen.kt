@@ -53,6 +53,7 @@ import com.wakeiq.R
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.presentation.AppStateViewModel
 import com.wakeiq.presentation.paletteForIndex
+import com.wakeiq.presentation.permissions.BatteryOptimizationBanner
 import com.wakeiq.presentation.permissions.PermissionsViewModel
 import java.time.DayOfWeek
 
@@ -178,6 +179,9 @@ private fun AlarmList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item(key = "oem_battery_warning") {
+            BatteryOptimizationBanner()
+        }
         if (showPermissionWarning) {
             item(key = "perm_warning") {
                 PermissionWarningBanner(onClick = onGrantPermissions)
