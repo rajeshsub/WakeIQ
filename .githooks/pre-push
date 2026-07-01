@@ -1,0 +1,6 @@
+#!/bin/sh
+# Run unit tests before pushing. Catches test failures before they hit CI.
+# Activate with: git config core.hooksPath .githooks
+set -e
+echo "pre-push: unit tests"
+./gradlew --daemon testFullDebugUnitTest
