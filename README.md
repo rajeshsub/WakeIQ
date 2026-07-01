@@ -114,9 +114,8 @@ Requires JDK 17 and Android SDK (compile SDK 35).
 Two layers of pre-commit checks run before each commit. Tests and coverage run
 in CI, not on commit, to keep the commit loop quick.
 
-`.githooks/pre-commit` runs ktlint and detekt on every commit, and
-`.githooks/pre-push` runs unit tests before every push. Activate both once per
-clone:
+`.githooks/pre-commit` runs ktlint, detekt, and unit tests on every commit.
+Activate it once per clone:
 
 ```bash
 git config core.hooksPath .githooks

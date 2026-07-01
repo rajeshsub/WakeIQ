@@ -1,7 +1,6 @@
 #!/bin/sh
-# Fast pre-commit checks: formatting and static analysis only.
-# Tests and coverage run in CI (the authoritative gate), not here, so the
-# commit loop stays fast. Activate with: git config core.hooksPath .githooks
+# Pre-commit checks: formatting, static analysis, and unit tests.
+# Activate with: git config core.hooksPath .githooks
 set -e
-echo "pre-commit: ktlint + detekt"
-./gradlew --daemon ktlintCheck detekt
+echo "pre-commit: ktlint + detekt + unit tests"
+./gradlew --daemon ktlintCheck detekt testFullDebugUnitTest
