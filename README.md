@@ -111,12 +111,22 @@ Requires JDK 17 and Android SDK (compile SDK 35).
 
 ### Git hooks
 
-A fast pre-commit hook runs ktlint and detekt before each commit. Tests and
-coverage run in CI, not on commit, to keep the commit loop quick. Activate it
-once per clone:
+Two layers of pre-commit checks run before each commit. Tests and coverage run
+in CI, not on commit, to keep the commit loop quick.
+
+`.githooks/pre-commit` runs ktlint and detekt on every commit. Activate it once
+per clone:
 
 ```bash
 git config core.hooksPath .githooks
+```
+
+`.pre-commit-config.yaml` adds Android lint (triggered by XML/Gradle changes),
+file formatting, and a no-println check. Activate it once per clone (requires
+[pre-commit](https://pre-commit.com)):
+
+```bash
+pre-commit install
 ```
 
 
