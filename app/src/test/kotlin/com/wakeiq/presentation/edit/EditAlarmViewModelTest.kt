@@ -81,10 +81,12 @@ class EditAlarmViewModelTest {
         val viewModel = newViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.toggleDay(DayOfWeek.WEDNESDAY)
-        assertTrue(DayOfWeek.WEDNESDAY in viewModel.uiState.value.daysOfWeek)
-        viewModel.toggleDay(DayOfWeek.WEDNESDAY)
-        assertFalse(DayOfWeek.WEDNESDAY in viewModel.uiState.value.daysOfWeek)
+        val today = LocalDate.now().dayOfWeek
+        val day = DayOfWeek.entries.first { it != today }
+        viewModel.toggleDay(day)
+        assertTrue(day in viewModel.uiState.value.daysOfWeek)
+        viewModel.toggleDay(day)
+        assertFalse(day in viewModel.uiState.value.daysOfWeek)
     }
 
     @Test
