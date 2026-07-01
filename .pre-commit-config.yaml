@@ -29,6 +29,14 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: android-lint
+        name: android lint
+        entry: bash -c './gradlew lintFullDebug --daemon 2>&1'
+        language: system
+        files: \.(xml|gradle|gradle\.kts)$
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: no-println
         name: no println / System.out
         language: pygrep
