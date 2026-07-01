@@ -90,7 +90,12 @@ Your data never leaves your device. No analytics, no telemetry, no crash reporti
 
 ## Building
 
-Requires JDK 17 and Android SDK (compile SDK 35).
+Requires JDK 17 and Android SDK (compile SDK 35, target SDK 35, min SDK 24 / Android 7.0).
+
+Background execution behaviour changes across that range: exact-alarm scheduling
+requires the `SCHEDULE_EXACT_ALARM` permission gate on API 31+, and full-screen
+intent delivery requires `USE_FULL_SCREEN_INTENT` on API 34+. See
+[ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ```bash
 # Debug APK (full flavour)
