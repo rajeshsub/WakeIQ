@@ -62,13 +62,13 @@ You will always wake by your set time. If you stay in a light stage through the 
 
 ---
 
-## Free. Open source. Private. Forever.
+## Free, open source and private forever.
 
-WakeIQ costs nothing. No premium tier. No subscription. No locked features.
+WakeIQ costs nothing. It has no premium tier, recurring subscriptions or locked features. Everything is available for all users.
 
-**No advertisements, ever.** The app is free and contains zero ads: no banners, no interstitials, no sponsored content.
+**No advertisements, ever.** The app is free and contains zero ads: no banners, interstitials or sponsored content.
 
-Your data never leaves your device. No analytics, no telemetry, no crash reporting, no remote servers. Nothing is transmitted anywhere. Your sleep patterns are yours.
+Your data never leaves your device. No analytics, telemetry, crash reporting or remote servers. Nothing is transmitted anywhere. Your sleep patterns are yours.
 
 ---
 
