@@ -2,5 +2,21 @@
 # Pre-commit checks: formatting, static analysis, and unit tests.
 # Activate with: git config core.hooksPath .githooks
 set -e
+
+STAGED=$(git diff --cached --name-only)
+
+# Skip all checks if only non-source files changed.
+if ! echo "$STAGED" | grep -qE '\.(kt|kts)$'; then
+  echo "pre-commit: no Kotlin files staged, skipping checks"
+  exit 0
+fi
+
+# Run lint-only tasks if no production/test sources changed (e.g. only build scripts).
+if ! echo "$STAGED" | grep -qE '^(app|core|.+/src)/.*\.kt$'; then
+  echo "pre-commit: ktlint + detekt"
+  ./gradlew --daemon ktlintCheck detekt
+  exit 0
+fi
+
 echo "pre-commit: ktlint + detekt + unit tests"
 ./gradlew --daemon ktlintCheck detekt testFullDebugUnitTest
