@@ -75,11 +75,8 @@ Privacy regulations such as the EU/UK General Data Protection Regulation (GDPR),
 
 We may update this Privacy Policy from time to time, for example to reflect changes to the app or to legal requirements. Any changes will be posted at this URL with an updated "Last updated" date. Because the app is open source, the full history of changes to this policy is also visible in the project's version-control history.
 
-## Contact
+## Source code
 
-If you have any questions about this Privacy Policy, contact:
-
-**Email:** rsub64@gmail.com
 **Source code:** https://github.com/rajeshsub/WakeIQ
 
 ---
