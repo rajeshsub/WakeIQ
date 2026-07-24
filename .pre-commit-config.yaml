@@ -17,7 +17,7 @@ repos:
         name: ktlint
         entry: bash -c './gradlew ktlintCheck --daemon 2>&1'
         language: system
-        files: \.kt$
+        files: \.kts?$
         pass_filenames: false
         stages: [pre-commit]
 
@@ -25,7 +25,7 @@ repos:
         name: detekt
         entry: bash -c './gradlew detekt --daemon 2>&1'
         language: system
-        files: \.kt$
+        files: \.kts?$
         pass_filenames: false
         stages: [pre-commit]
 
@@ -43,3 +43,11 @@ repos:
         entry: '(System\.out\.|System\.err\.|println\()'
         files: \.kt$
         exclude: 'src/test|src/androidTest'
+
+      - id: unit-tests
+        name: unit tests
+        entry: bash -c './gradlew testFullDebugUnitTest --daemon 2>&1'
+        language: system
+        files: \.kts?$
+        pass_filenames: false
+        stages: [pre-push]

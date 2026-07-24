@@ -90,12 +90,20 @@ Your data never leaves your device. No analytics, telemetry, crash reporting or 
 
 ## Building
 
-Requires JDK 17 and Android SDK (compile SDK 35, target SDK 35, min SDK 24 / Android 7.0).
+Requires JDK 17, Android SDK (compile SDK 35, target SDK 35, min SDK 24 /
+Android 7.0), and Python 3 with pip (used by the `pre-commit` git hooks below).
 
 Background execution behaviour changes across that range: exact-alarm scheduling
 requires the `SCHEDULE_EXACT_ALARM` permission gate on API 31+, and full-screen
 intent delivery requires `USE_FULL_SCREEN_INTENT` on API 34+. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+
+One-step setup after cloning, wires the git hooks described below and needs no
+other manual steps:
+
+```bash
+./gradlew bootstrap        # Windows: gradlew.bat bootstrap
+```
 
 ```bash
 # Debug APK (full flavour)
@@ -116,23 +124,16 @@ intent delivery requires `USE_FULL_SCREEN_INTENT` on API 34+. See
 
 ### Git hooks
 
-Two layers of pre-commit checks run before each commit. Tests and coverage run
-in CI, not on commit, to keep the commit loop quick.
+One config, `.pre-commit-config.yaml`, drives both stages:
 
-`.githooks/pre-commit` runs ktlint, detekt, and unit tests on every commit.
-Activate it once per clone:
+- **pre-commit** (fast, runs on every commit): ktlint, detekt, Android Lint,
+  file hygiene (trailing whitespace, end-of-file, merge conflicts, large
+  files, line endings), and a no-println check. No tests, to keep commits quick.
+- **pre-push**: the full unit test suite (`testFullDebugUnitTest`).
 
-```bash
-git config core.hooksPath .githooks
-```
-
-`.pre-commit-config.yaml` adds Android lint (triggered by XML/Gradle changes),
-file formatting, and a no-println check. Activate it once per clone (requires
-[pre-commit](https://pre-commit.com)):
-
-```bash
-pre-commit install
-```
+CI runs the same pre-commit config, plus the full unit test suite, coverage
+reporting, and instrumented (emulator) tests, so nothing skipped locally goes
+unchecked before merge.
 
 
 ---

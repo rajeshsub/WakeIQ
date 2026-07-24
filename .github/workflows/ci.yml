@@ -31,14 +31,13 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Run ktlint
-        run: ./gradlew ktlintCheck
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
-      - name: Run detekt
-        run: ./gradlew detekt
-
-      - name: Run Android Lint
-        run: ./gradlew lintFullDebug
+      - name: Lint, format and hygiene checks (pre-commit)
+        uses: pre-commit/action@v3.0.1
 
       - name: Run unit tests
         run: ./gradlew testFullDebugUnitTest
