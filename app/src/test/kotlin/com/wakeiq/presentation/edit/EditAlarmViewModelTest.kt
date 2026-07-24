@@ -72,7 +72,6 @@ class EditAlarmViewModelTest {
         assertFalse(state.isLoading)
         assertTrue(state.isNew)
         assertEquals(setOf(LocalDate.now().dayOfWeek), state.daysOfWeek)
-        assertEquals(MotionSensitivity.MEDIUM, state.motionSensitivity)
         assertEquals(9, state.snoozeMinutes)
     }
 
@@ -111,6 +110,22 @@ class EditAlarmViewModelTest {
         assertEquals(SoundType.BUNDLED, config.type)
         assertEquals(BundledSound.PIANO, config.bundledSound)
         verify { audioPlayer.playPreview(any()) }
+    }
+
+    @Test
+    fun `saving applies the global motion sensitivity, ignoring the stored per-alarm value`() = runTest {
+        every { prefs.defaultMotionSensitivity } returns flowOf(MotionSensitivity.LOW)
+        val stored = Alarm(id = 9L, hour = 8, minute = 15, motionSensitivity = MotionSensitivity.HIGH)
+        coEvery { repository.getById(9L) } returns stored
+        val saved = slot<Alarm>()
+        coEvery { saveAlarm(capture(saved)) } returns 9L
+        val viewModel = newViewModel(id = 9L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(MotionSensitivity.LOW, saved.captured.motionSensitivity)
     }
 
     @Test
@@ -173,7 +188,6 @@ class EditAlarmViewModelTest {
             hour = 8,
             minute = 15,
             label = "Standup",
-            motionSensitivity = MotionSensitivity.HIGH,
             snoozeMinutes = 11,
             colorIndex = 4,
         )
@@ -186,7 +200,6 @@ class EditAlarmViewModelTest {
         assertEquals(8, state.hour)
         assertEquals(15, state.minute)
         assertEquals("Standup", state.label)
-        assertEquals(MotionSensitivity.HIGH, state.motionSensitivity)
         assertEquals(11, state.snoozeMinutes)
         assertEquals(4, state.colorIndex)
     }

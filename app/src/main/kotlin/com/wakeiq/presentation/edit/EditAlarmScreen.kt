@@ -58,7 +58,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeiq.R
 import com.wakeiq.domain.model.BundledSound
-import com.wakeiq.domain.model.MotionSensitivity
 import com.wakeiq.domain.model.SoundCategory
 import com.wakeiq.domain.model.SoundType
 import com.wakeiq.presentation.AlarmPalettes
@@ -94,7 +93,6 @@ fun EditAlarmScreen(
     }
 
     var showSmartWakeDialog by remember { mutableStateOf(false) }
-    var showMotionDialog by remember { mutableStateOf(false) }
 
     if (showSmartWakeDialog) {
         AlertDialog(
@@ -103,19 +101,6 @@ fun EditAlarmScreen(
             text = { Text(stringResource(R.string.smart_wake_tooltip_body)) },
             confirmButton = {
                 TextButton(onClick = { showSmartWakeDialog = false }) {
-                    Text(stringResource(R.string.tooltip_ok))
-                }
-            },
-        )
-    }
-
-    if (showMotionDialog) {
-        AlertDialog(
-            onDismissRequest = { showMotionDialog = false },
-            title = { Text(stringResource(R.string.motion_sensitivity_tooltip_title)) },
-            text = { Text(stringResource(R.string.motion_sensitivity_tooltip_body)) },
-            confirmButton = {
-                TextButton(onClick = { showMotionDialog = false }) {
                     Text(stringResource(R.string.tooltip_ok))
                 }
             },
@@ -281,48 +266,6 @@ fun EditAlarmScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 12.dp),
                     )
-                }
-            }
-
-            // Motion sensitivity
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.motion_sensitivity_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(
-                        onClick = { showMotionDialog = true },
-                        modifier = Modifier.size(40.dp),
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MotionSensitivity.entries.forEach { s ->
-                        FilterChip(
-                            selected = s == uiState.motionSensitivity,
-                            onClick = { viewModel.setSensitivity(s) },
-                            label = {
-                                Text(
-                                    when (s) {
-                                        MotionSensitivity.LOW -> stringResource(R.string.motion_sensitivity_low)
-                                        MotionSensitivity.MEDIUM -> stringResource(R.string.motion_sensitivity_medium)
-                                        MotionSensitivity.HIGH -> stringResource(R.string.motion_sensitivity_high)
-                                    },
-                                )
-                            },
-                        )
-                    }
                 }
             }
 

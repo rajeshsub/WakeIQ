@@ -55,6 +55,7 @@ fun SettingsScreen(
     var showBlueLightDialog by remember { mutableStateOf(false) }
     var showSmartWindowInfo by remember { mutableStateOf(false) }
     var showRampInfo by remember { mutableStateOf(false) }
+    var showMotionInfo by remember { mutableStateOf(false) }
 
     if (showBlueLightDialog) {
         InfoDialog(
@@ -75,6 +76,13 @@ fun SettingsScreen(
             title = stringResource(R.string.ramp_duration_info_title),
             body = stringResource(R.string.ramp_duration_info_body),
             onDismiss = { showRampInfo = false },
+        )
+    }
+    if (showMotionInfo) {
+        InfoDialog(
+            title = stringResource(R.string.motion_sensitivity_tooltip_title),
+            body = stringResource(R.string.motion_sensitivity_tooltip_body),
+            onDismiss = { showMotionInfo = false },
         )
     }
 
@@ -136,7 +144,10 @@ fun SettingsScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.motion_sensitivity_title), style = MaterialTheme.typography.titleMedium)
+                SettingTitleRow(
+                    title = stringResource(R.string.motion_sensitivity_title),
+                    onInfo = { showMotionInfo = true },
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

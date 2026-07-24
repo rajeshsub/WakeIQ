@@ -8,7 +8,6 @@ import com.wakeiq.data.audio.AudioPlayer
 import com.wakeiq.data.preferences.AppPreferences
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.domain.model.BundledSound
-import com.wakeiq.domain.model.MotionSensitivity
 import com.wakeiq.domain.model.SoundConfig
 import com.wakeiq.domain.model.SoundType
 import com.wakeiq.domain.repository.AlarmRepository
@@ -35,7 +34,6 @@ data class EditAlarmUiState(
     val daysOfWeek: Set<DayOfWeek> = emptySet(),
     val label: String = "",
     val soundConfig: SoundConfig = SoundConfig(),
-    val motionSensitivity: MotionSensitivity = MotionSensitivity.MEDIUM,
     val snoozeMinutes: Int = 9,
     val useSmartWake: Boolean = true,
     val isNapDuration: Boolean = false,
@@ -71,7 +69,6 @@ class EditAlarmViewModel @Inject constructor(
         viewModelScope.launch {
             val is24Hour = prefs.use24HourClock.first()
             if (alarmId == -1L) {
-                val sensitivity = prefs.defaultMotionSensitivity.first()
                 val snooze = prefs.defaultSnoozeMinutes.first()
                 val nap = isNapDuration(_uiState.value.hour, _uiState.value.minute)
                 _uiState.update {
@@ -79,7 +76,6 @@ class EditAlarmViewModel @Inject constructor(
                         isLoading = false,
                         isNew = true,
                         daysOfWeek = setOf(LocalDate.now().dayOfWeek),
-                        motionSensitivity = sensitivity,
                         snoozeMinutes = snooze,
                         isNapDuration = nap,
                         useSmartWake = !nap && smartWakeUserChoice,
@@ -100,7 +96,6 @@ class EditAlarmViewModel @Inject constructor(
                             daysOfWeek = alarm.daysOfWeek,
                             label = alarm.label,
                             soundConfig = alarm.soundConfig,
-                            motionSensitivity = alarm.motionSensitivity,
                             snoozeMinutes = alarm.snoozeMinutes,
                             isNapDuration = nap,
                             useSmartWake = !nap && alarm.useSmartWake,
@@ -154,8 +149,6 @@ class EditAlarmViewModel @Inject constructor(
         it.copy(soundConfig = it.soundConfig.copy(type = SoundType.CUSTOM, customUri = uri))
     }
 
-    fun setSensitivity(s: MotionSensitivity) = _uiState.update { it.copy(motionSensitivity = s) }
-
     fun setColorIndex(index: Int) = _uiState.update { it.copy(colorIndex = index) }
 
     fun setUseSmartWake(enabled: Boolean) {
@@ -171,6 +164,8 @@ class EditAlarmViewModel @Inject constructor(
             val smartWindow = prefs.defaultSmartWindowMinutes.first()
             // Naps (alarm under 90 min away) ring at full volume at the set time, with no gentle ramp.
             val ramp = if (state.isNapDuration) 0 else prefs.defaultRampDurationMinutes.first()
+            // Motion sensitivity is a global setting only, so it is always read from preferences.
+            val sensitivity = prefs.defaultMotionSensitivity.first()
             // Final guard: a nap alarm is never saved with smart wake, regardless of stale state.
             val effectiveSmartWake = state.useSmartWake && !state.isNapDuration
             val alarm = Alarm(
@@ -182,7 +177,7 @@ class EditAlarmViewModel @Inject constructor(
                 soundConfig = state.soundConfig,
                 smartWindowMinutes = if (effectiveSmartWake) smartWindow else 0,
                 rampDurationMinutes = ramp,
-                motionSensitivity = state.motionSensitivity,
+                motionSensitivity = sensitivity,
                 snoozeMinutes = state.snoozeMinutes,
                 label = state.label,
                 useSmartWake = effectiveSmartWake,

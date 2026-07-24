@@ -5,7 +5,7 @@
     <!-- Home screen -->
     <string name="home_title">Alarms</string>
     <string name="home_no_alarms">No alarms set.\nTap + to create one.</string>
-    <string name="add_alarm">Add alarm</string>
+    <string name="new_alarm">New Alarm</string>
     <string name="alarm_enabled">Alarm enabled</string>
     <string name="alarm_disabled">Alarm disabled</string>
 

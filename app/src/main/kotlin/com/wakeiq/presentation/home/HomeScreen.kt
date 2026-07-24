@@ -21,7 +21,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -121,9 +121,11 @@ fun HomeScreen(
             HomeTopBar(onOpenSettings = onOpenSettings)
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddAlarm) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_alarm))
-            }
+            ExtendedFloatingActionButton(
+                onClick = onAddAlarm,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.new_alarm)) },
+            )
         },
     ) { padding ->
         when (val state = uiState) {
