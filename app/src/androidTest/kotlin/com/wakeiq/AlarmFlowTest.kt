@@ -2,6 +2,7 @@ package com.wakeiq
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -38,7 +39,7 @@ class AlarmFlowTest {
     @Test
     fun fabOpensEditScreen() {
         composeRule
-            .onNodeWithText(composeRule.activity.getString(R.string.new_alarm))
+            .onNodeWithContentDescription(composeRule.activity.getString(R.string.new_alarm))
             .performClick()
         composeRule.onNodeWithText(
             composeRule.activity.getString(R.string.edit_alarm_title_new),

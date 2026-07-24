@@ -123,7 +123,7 @@ fun HomeScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddAlarm,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_alarm)) },
                 text = { Text(stringResource(R.string.new_alarm)) },
             )
         },
