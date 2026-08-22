@@ -56,13 +56,22 @@ committed file, so there's nothing extra to maintain.
 Scope stays test-suite-only per the agreed selection: no instrumentation is
 added to alarm-scheduling or audio-ramp runtime code paths.
 
-**Test coverage of `recordTestTiming` itself:** the task's parsing/aggregation
-logic (XML parse, sum, JSON write) is real, non-trivial logic per rule 15,
-but it lives inline in `app/build.gradle.kts` rather than in an extractable,
-independently testable unit (would need a `buildSrc` precompiled script
-plugin to house a testable class - a new build-logic module this project
-doesn't otherwise have). Flagged as an open item rather than silently
-exempted; whether to extract it is a developer call, not decided here.
+**Test coverage of `recordTestTiming` itself:** the XML parse/aggregate logic
+is real, non-trivial logic per rule 15. It's extracted into
+`buildSrc/src/main/kotlin/com/wakeiq/buildlogic/TestTimingParser.kt`
+(a plain `object`, no Gradle API dependency) with unit tests in
+`buildSrc/src/test/kotlin/.../TestTimingParserTest.kt` covering: single file,
+multiple files summed, missing `time` attribute, malformed `tests`
+attribute, and an empty file list - each asserting the resulting totals, not
+just that parsing doesn't throw. `app/build.gradle.kts`'s `recordTestTiming`
+task now only orchestrates (locate XML files, call the parser, resolve the
+commit, write JSON); JSON serialization stays untested as trivial string
+formatting. `buildSrc` also has `ktlint`/`detekt` wired (versions repeated
+from `gradle/libs.versions.toml` since buildSrc is a standalone build with no
+catalog access), and `.pre-commit-config.yaml`'s `ktlint-check`/`detekt`
+hooks were updated to explicitly include `:buildSrc:ktlintCheck` /
+`:buildSrc:detekt` - the bare `ktlintCheck`/`detekt` task names only reach
+the `:app` module, so without this buildSrc code would have been unlinted.
 
 ## Consequences
 

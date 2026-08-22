@@ -201,18 +201,12 @@ tasks.register("recordTestTiming") {
 
     doLast {
         val resultsDir = layout.buildDirectory.dir("test-results/testFullDebugUnitTest").get().asFile
-        val xmlFiles = resultsDir.listFiles { f -> f.extension == "xml" } ?: emptyArray()
+        val xmlFiles = (resultsDir.listFiles { f -> f.extension == "xml" } ?: emptyArray()).toList()
 
-        var totalSeconds = 0.0
-        var testCount = 0
-        // No external-entity hardening: input is Gradle's own JUnit XML,
-        // generated in this same job, not untrusted external input.
-        val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-        xmlFiles.forEach { file ->
-            val root = factory.newDocumentBuilder().parse(file).documentElement
-            totalSeconds += root.getAttribute("time").toDoubleOrNull() ?: 0.0
-            testCount += root.getAttribute("tests").toIntOrNull() ?: 0
-        }
+        // Parsing/aggregation lives in buildSrc so it's unit-tested
+        // (buildSrc/src/test/kotlin/com/wakeiq/buildlogic/TestTimingParserTest.kt)
+        // rather than untested logic inline in a doLast closure.
+        val (totalSeconds, testCount) = com.wakeiq.buildlogic.TestTimingParser.parse(xmlFiles)
 
         val commit = System.getenv("GITHUB_SHA") ?: run {
             val process = ProcessBuilder("git", "rev-parse", "HEAD")

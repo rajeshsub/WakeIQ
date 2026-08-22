@@ -53,6 +53,19 @@ source sets, not arbitrary matched files):
   `testFullDebugUnitTest` explicitly - same gate list as pre-commit + the
   pre-push hook, from the one config file.
 
+**Re-verified 2026-08-23** after `.pre-commit-config.yaml` changed (adding
+`buildSrc` to the ktlint/detekt hook commands, needed once `buildSrc` gained
+real source - see `gaps.md`). Confirmed the bare `ktlintCheck`/`detekt`
+task names silently do NOT reach `buildSrc` (only `:app`) by running them
+directly and grepping the task list; fixed by adding explicit
+`:buildSrc:ktlintCheck`/`:buildSrc:detekt` to the hook commands; re-ran the
+same inject-violation-in-buildSrc / confirm-rejection-via-the-real-hook /
+delete / confirm-green cycle as the original verification. This is the
+scenario rule 16 warns about directly: "green alone proves gate runs on
+clean code, not [that it] stops bad code" - `pre-commit run --all-files` had
+been reporting green on buildSrc changes for one full round without
+buildSrc's lint ever actually running.
+
 Hook config hash / CI config hash not separately recorded (no CI mechanism
 in this repo for that yet); re-verify this section if `.pre-commit-config.yaml`,
 the CI workflow files, or the pinned ktlint/detekt/Kover versions change.

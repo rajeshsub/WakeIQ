@@ -15,7 +15,9 @@ repos:
     hooks:
       - id: ktlint-check
         name: ktlint
-        entry: bash -c './gradlew ktlintCheck --daemon 2>&1'
+        # Bare `ktlintCheck` only reaches the :app module; buildSrc is a
+        # separate build and needs its own task named explicitly.
+        entry: bash -c './gradlew ktlintCheck :buildSrc:ktlintCheck --daemon 2>&1'
         language: system
         files: \.kts?$
         pass_filenames: false
@@ -23,7 +25,7 @@ repos:
 
       - id: detekt
         name: detekt
-        entry: bash -c './gradlew detekt --daemon 2>&1'
+        entry: bash -c './gradlew detekt :buildSrc:detekt --daemon 2>&1'
         language: system
         files: \.kts?$
         pass_filenames: false

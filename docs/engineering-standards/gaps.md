@@ -33,13 +33,29 @@ and fixed:
 - Kover `xml { xmlFile = ... }` was resolving the path eagerly at
   configuration time; switched to the lazy `Provider<RegularFile>` form.
 
-## Open item (not closed - developer decision needed)
+## 2026-08-23 - open item closed
 
-- **`recordTestTiming` (app/build.gradle.kts) has no test coverage.** It's
-  real parsing/aggregation logic (JUnit XML parse, duration sum, JSON write)
-  per rule 15's "every non-trivial logic unit has a runnable check," but it
-  lives inline in a `doLast` closure, not in an extractable unit. Testing it
-  properly would mean pulling the logic into a `buildSrc` precompiled script
-  plugin - new build-logic infrastructure this project doesn't otherwise
-  have. Left open rather than unilaterally adding that infrastructure or
-  silently exempting it; noted in ADR 0007's consequences section too.
+- **`recordTestTiming` test coverage** (open item above): extracted the
+  parse/aggregate logic into `buildSrc` (`TestTimingParser`), added 5 unit
+  tests (single file, multiple files, missing `time` attr, malformed `tests`
+  attr, empty list) - all pass, all assert actual totals, not just
+  no-throw. `app/build.gradle.kts`'s task now just orchestrates. Wiring this
+  surfaced a real gate gap along the way: the pre-commit `ktlint-check`/
+  `detekt` hooks called bare `./gradlew ktlintCheck`/`detekt`, which only
+  reaches the `:app` module - buildSrc's new Kotlin source would have been
+  unlinted by the real hook despite `pre-commit run --all-files` looking
+  green (it only looked green because I was invoking `:buildSrc:ktlintCheck`
+  manually, not through the hook). Fixed by adding `:buildSrc:ktlintCheck`/
+  `:buildSrc:detekt` to `.pre-commit-config.yaml`, then proved it with the
+  same rule-16 method as the original audit: injected a deliberate ktlint
+  violation into buildSrc source, ran `pre-commit run --all-files` (the real
+  hook entrypoint, not a manual task call), confirmed rejection, reverted.
+  **Closed.**
+
+Deferred by developer request (2026-08-22), not forgotten:
+
+- `NVD_API_KEY` GitHub secret - optional, recommended (unset = slower NVD
+  lookups, anonymous rate limits).
+- GPG tag signing setup - README already documents `git tag -s`/`git tag -v`
+  going forward; needs the developer's signing key configured
+  (`git config user.signingkey`, `tag.gpgSign`).
