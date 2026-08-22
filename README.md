@@ -1,5 +1,9 @@
 # WakeIQ
 
+[![CI](https://github.com/rajeshsub/WakeIQ/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rajeshsub/WakeIQ/actions/workflows/ci.yml)
+[![Release](https://github.com/rajeshsub/WakeIQ/actions/workflows/release.yml/badge.svg)](https://github.com/rajeshsub/WakeIQ/actions/workflows/release.yml)
+[![Dependency Scan](https://github.com/rajeshsub/WakeIQ/actions/workflows/dependency-scan.yml/badge.svg)](https://github.com/rajeshsub/WakeIQ/actions/workflows/dependency-scan.yml)
+
 A free, open-source Android alarm app that wakes you gently, by working with your sleep cycle instead of against it.
 
 ![Feature graphic](play-store/feature-graphic.png)
@@ -133,8 +137,27 @@ One config, `.pre-commit-config.yaml`, drives both stages:
 
 CI runs the same pre-commit config, plus the full unit test suite, coverage
 reporting, and instrumented (emulator) tests, so nothing skipped locally goes
-unchecked before merge.
+unchecked before merge. On pull requests, CI additionally fails if changed
+lines fall under 80% coverage on the `logic` Kover variant (`diff-cover`), and
+every run scans the dependency graph for known CVEs
+(`./gradlew dependencyCheckAnalyze`, OWASP dependency-check). Dependency
+versions are locked (`app/gradle.lockfile`); regenerate after any add/bump
+with `./gradlew :app:dependencies --write-locks`.
 
+### Verifying a release
+
+Every tagged release publishes signed APKs to
+[GitHub Releases](https://github.com/rajeshsub/WakeIQ/releases) alongside a
+`.sha256` checksum file for each APK, generated in CI at build time. To verify
+a downloaded APK:
+
+```bash
+sha256sum -c app-full-release.apk.sha256
+```
+
+Release tags from this point forward are signed (`git tag -s`); verify with
+`git tag -v <tag>`. Tags `v0.1.0`-`v0.1.2` predate this practice and are
+unsigned.
 
 ---
 

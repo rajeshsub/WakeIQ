@@ -1,3 +1,5 @@
+import java.time.Instant
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -90,6 +92,12 @@ android {
     }
 }
 
+// See docs/adr/0006-dependency-locking-and-vulnerability-scanning.md.
+// Regenerate after any dependency add/bump: ./gradlew :app:dependencies --write-locks
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 ktlint {
     version.set("1.3.1")
     android.set(true)
@@ -171,7 +179,62 @@ kover {
                     )
                 }
             }
+
+            // Explicit path (not the tool's default) so CI's diff-cover step
+            // (docs/adr/0004-diff-gated-coverage-enforcement.md) has a fixed,
+            // documented target instead of depending on undocumented default
+            // naming.
+            xml {
+                xmlFile = layout.buildDirectory.file("reports/kover/reportLogic.xml")
+            }
         }
+    }
+}
+
+// See docs/adr/0007-test-timing-instrumentation.md. Parses the JUnit XML
+// testFullDebugUnitTest already produces and records total suite duration
+// for CI trend reporting; no new test dependency, no change to how tests run.
+tasks.register("recordTestTiming") {
+    group = "verification"
+    description = "Parses JUnit XML from testFullDebugUnitTest and records suite duration for CI trend reporting."
+    dependsOn("testFullDebugUnitTest")
+
+    doLast {
+        val resultsDir = layout.buildDirectory.dir("test-results/testFullDebugUnitTest").get().asFile
+        val xmlFiles = resultsDir.listFiles { f -> f.extension == "xml" } ?: emptyArray()
+
+        var totalSeconds = 0.0
+        var testCount = 0
+        // No external-entity hardening: input is Gradle's own JUnit XML,
+        // generated in this same job, not untrusted external input.
+        val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        xmlFiles.forEach { file ->
+            val root = factory.newDocumentBuilder().parse(file).documentElement
+            totalSeconds += root.getAttribute("time").toDoubleOrNull() ?: 0.0
+            testCount += root.getAttribute("tests").toIntOrNull() ?: 0
+        }
+
+        val commit = System.getenv("GITHUB_SHA") ?: run {
+            val process = ProcessBuilder("git", "rev-parse", "HEAD")
+                .directory(rootDir)
+                .redirectErrorStream(true)
+                .start()
+            val output = process.inputStream.bufferedReader().readText().trim()
+            if (process.waitFor() == 0) output else "unknown"
+        }
+
+        val outDir = File(rootDir, "benchmark-results")
+        outDir.mkdirs()
+        val outFile = File(outDir, "unit-test-timing.json")
+        outFile.writeText(
+            "{" +
+                "\"timestamp\":\"${Instant.now()}\"," +
+                "\"commit\":\"$commit\"," +
+                "\"totalSeconds\":$totalSeconds," +
+                "\"testCount\":$testCount" +
+                "}\n",
+        )
+        println("recordTestTiming: $testCount tests, ${totalSeconds}s -> ${outFile.relativeTo(rootDir)}")
     }
 }
 

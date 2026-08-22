@@ -9,6 +9,31 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.junit5.android) apply false
     alias(libs.plugins.kover) apply false
+    alias(libs.plugins.owasp.dependencycheck)
+}
+
+// Scans the whole resolved dependency graph (all modules), so it's applied at
+// the root rather than per-module. See docs/adr/0006-dependency-locking-and-vulnerability-scanning.md.
+dependencyCheck {
+    failBuildOnCVSS = 7.0f
+    suppressionFile = "owasp-suppressions.xml"
+    formats = listOf("HTML", "JUNIT")
+    // Set explicitly (docs default is ${buildDir}/reports) so the report path
+    // CI uploads as an artifact is fixed and documented, not left to a default
+    // that could shift between plugin versions.
+    outputDirectory.set(layout.buildDirectory.dir("reports/dependency-check"))
+    // Set explicitly (outside build/, since `clean` would otherwise wipe the
+    // synced CVE database) so CI can cache this exact path across runs instead
+    // of re-syncing the full NVD feed every time. See ci.yml / dependency-scan.yml.
+    data {
+        directory = "${rootDir}/.dependency-check-data"
+    }
+    nvd {
+        // Optional but strongly recommended: an unset key works, just far slower
+        // (NVD rate-limits anonymous API access). Set the NVD_API_KEY secret in CI
+        // and export it locally to speed up the first scan after cache expiry.
+        apiKey = System.getenv("NVD_API_KEY")
+    }
 }
 
 tasks.register("bootstrap") {

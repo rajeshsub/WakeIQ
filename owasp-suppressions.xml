@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!--
+    Add a <suppress> entry here only for a reviewed false positive or an
+    accepted risk, and record why:
+
+    <suppress>
+        <notes>False positive: CVE-XXXX-XXXXX matches library name but not
+        this artifact's actual code path. Reviewed 2026-08-22.</notes>
+        <packageUrl regex="true">^pkg:maven/group/artifact@.*$</packageUrl>
+        <cve>CVE-XXXX-XXXXX</cve>
+    </suppress>
+    -->
+</suppressions>
