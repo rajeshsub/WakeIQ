@@ -206,7 +206,7 @@ tasks.register("recordTestTiming") {
         // Parsing/aggregation lives in buildSrc so it's unit-tested
         // (buildSrc/src/test/kotlin/com/wakeiq/buildlogic/TestTimingParserTest.kt)
         // rather than untested logic inline in a doLast closure.
-        val (totalSeconds, testCount) = com.wakeiq.buildlogic.TestTimingParser.parse(xmlFiles)
+        val (totalSeconds, testCount, testCases) = com.wakeiq.buildlogic.TestTimingParser.parse(xmlFiles)
 
         val commit = System.getenv("GITHUB_SHA") ?: run {
             val process = ProcessBuilder("git", "rev-parse", "HEAD")
@@ -217,6 +217,14 @@ tasks.register("recordTestTiming") {
             if (process.waitFor() == 0) output else "unknown"
         }
 
+        fun jsonEscape(s: String) = s.replace("\\", "\\\\").replace("\"", "\\\"")
+
+        val testCasesJson = testCases.joinToString(",") {
+            "{\"class\":\"${jsonEscape(it.className)}\"," +
+                "\"name\":\"${jsonEscape(it.name)}\"," +
+                "\"seconds\":${it.seconds}}"
+        }
+
         val outDir = File(rootDir, "benchmark-results")
         outDir.mkdirs()
         val outFile = File(outDir, "unit-test-timing.json")
@@ -225,7 +233,8 @@ tasks.register("recordTestTiming") {
                 "\"timestamp\":\"${Instant.now()}\"," +
                 "\"commit\":\"$commit\"," +
                 "\"totalSeconds\":$totalSeconds," +
-                "\"testCount\":$testCount" +
+                "\"testCount\":$testCount," +
+                "\"testCases\":[$testCasesJson]" +
                 "}\n",
         )
         println("recordTestTiming: $testCount tests, ${totalSeconds}s -> ${outFile.relativeTo(rootDir)}")

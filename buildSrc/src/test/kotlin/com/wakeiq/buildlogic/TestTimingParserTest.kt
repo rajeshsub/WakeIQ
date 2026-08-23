@@ -34,6 +34,45 @@ class TestTimingParserTest {
     }
 
     @Test
+    fun `per-testcase durations are extracted and sorted slowest first`() {
+        val file = writeXml(
+            "a.xml",
+            """
+            <testsuite time="0.010" tests="2">
+              <testcase name="fast case" classname="com.wakeiq.FooTest" time="0.002"/>
+              <testcase name="slow case" classname="com.wakeiq.FooTest" time="0.008"/>
+            </testsuite>
+            """.trimIndent(),
+        )
+
+        val result = TestTimingParser.parse(listOf(file))
+
+        assertEquals(
+            listOf(
+                TestCaseTiming("com.wakeiq.FooTest", "slow case", 0.008),
+                TestCaseTiming("com.wakeiq.FooTest", "fast case", 0.002),
+            ),
+            result.testCases,
+        )
+    }
+
+    @Test
+    fun `testcase missing time attribute defaults to zero`() {
+        val file = writeXml(
+            "a.xml",
+            """
+            <testsuite time="0.0" tests="1">
+              <testcase name="no time" classname="com.wakeiq.FooTest"/>
+            </testsuite>
+            """.trimIndent(),
+        )
+
+        val result = TestTimingParser.parse(listOf(file))
+
+        assertEquals(listOf(TestCaseTiming("com.wakeiq.FooTest", "no time", 0.0)), result.testCases)
+    }
+
+    @Test
     fun `missing time attribute defaults to zero without throwing`() {
         val file = writeXml("a.xml", """<testsuite tests="3"></testsuite>""")
 

@@ -141,7 +141,7 @@ jobs:
           retention-days: 90
 
       - name: Render test-timing trend
-        if: always() && github.event_name == 'push'
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -175,6 +175,17 @@ jobs:
           # where the commit/PR check link actually lands (the job page) - a
           # notice annotation shows directly on that job page, no extra nav.
           echo "::notice title=Unit test suite timing (last 10 runs on main)::${notice}"
+
+          # Per-test breakdown for this run - which piece is slow, not just
+          # the run total. Precision is whatever the JUnit XML `time` attr
+          # gives us (millisecond-granularity); no nanosecond-level timer.
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Test durations, this run (slowest first)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| test | duration (ms) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.testCases[] | "| \(.class).\(.name) | \(.seconds * 1000) |"' \
+            benchmark-results/unit-test-timing.json >> "$GITHUB_STEP_SUMMARY"
 
   instrumented:
     name: Instrumented Tests
