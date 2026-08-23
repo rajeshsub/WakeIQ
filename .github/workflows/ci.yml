@@ -71,16 +71,27 @@ jobs:
             --fail-under=80
 
       - name: Cache OWASP NVD CVE database
+        if: ${{ secrets.NVD_API_KEY != '' }}
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .dependency-check-data
           key: owasp-nvd-data-${{ github.run_id }}
           restore-keys: owasp-nvd-data-
 
+      # NVD's API 2.0 requires a real key to fetch CVE data at all (no
+      # anonymous fallback in this plugin version, despite what an earlier
+      # comment here claimed) - skip cleanly instead of failing every build
+      # until NVD_API_KEY is set. See docs/adr/0006 and gaps.md.
       - name: Dependency vulnerability scan (OWASP)
+        if: ${{ secrets.NVD_API_KEY != '' }}
         run: ./gradlew dependencyCheckAnalyze
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+      - name: Warn if dependency scan was skipped
+        if: ${{ secrets.NVD_API_KEY == '' }}
+        run: |
+          echo "::warning::Dependency vulnerability scan skipped - NVD_API_KEY secret not set. Get a free key at https://nvd.nist.gov/developers/request-an-api-key and add it as a repo secret."
 
       - name: Build debug APK
         run: ./gradlew assembleFullDebug

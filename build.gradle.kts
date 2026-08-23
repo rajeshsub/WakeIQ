@@ -29,10 +29,14 @@ dependencyCheck {
         directory = "${rootDir}/.dependency-check-data"
     }
     nvd {
-        // Optional but strongly recommended: an unset key works, just far slower
-        // (NVD rate-limits anonymous API access). Set the NVD_API_KEY secret in CI
-        // and export it locally to speed up the first scan after cache expiry.
-        apiKey = System.getenv("NVD_API_KEY")
+        // REQUIRED, not just faster-with-one: NVD's API 2.0 has no anonymous
+        // fallback in this plugin version - an absent/blank key throws
+        // (NvdApiException) rather than falling back to slow unauthenticated
+        // access. CI skips the scan step entirely when the secret is unset
+        // (see ci.yml / dependency-scan.yml) rather than running with a bad
+        // key; this still guards against a blank string reaching the plugin
+        // as a value if invoked outside that guarded path.
+        apiKey = System.getenv("NVD_API_KEY")?.takeIf { it.isNotBlank() }
     }
 }
 

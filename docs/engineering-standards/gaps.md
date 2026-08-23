@@ -52,10 +52,27 @@ and fixed:
   hook entrypoint, not a manual task call), confirmed rejection, reverted.
   **Closed.**
 
+## 2026-08-23 - CI failure: NVD_API_KEY turned out to be required, not optional
+
+First two pushes both failed `ci.yml`'s "Dependency vulnerability scan
+(OWASP)" step: `NvdApiException: Invalid API Key, length of 0`. The original
+ADR 0006 / code comments said an unset key just meant slower anonymous NVD
+access - that was wrong. This plugin version's NVD API 2.0 client has no
+anonymous fallback at all; a blank key throws outright, it doesn't degrade.
+Fixed by making both `ci.yml` and `dependency-scan.yml` skip the OWASP step
+(with a `::warning::` annotation) when `secrets.NVD_API_KEY` is unset, so CI
+passes green - but the scan itself does not actually run until the key is
+added. ADR 0006 and the build.gradle.kts comment corrected to say
+"required," not "optional." **Closed** (CI green), but functionally the
+dependency vulnerability scan is a no-op until the developer adds the key -
+this is not the same as the gap being fully resolved end-to-end.
+
 Deferred by developer request (2026-08-22), not forgotten:
 
-- `NVD_API_KEY` GitHub secret - optional, recommended (unset = slower NVD
-  lookups, anonymous rate limits).
+- `NVD_API_KEY` GitHub secret - **now confirmed required for the OWASP scan
+  to run at all**, not merely "recommended for speed" as first stated. Get a
+  free key at https://nvd.nist.gov/developers/request-an-api-key and add it
+  as a repo secret; until then the scan step is skipped, not degraded.
 - GPG tag signing setup - README already documents `git tag -s`/`git tag -v`
   going forward; needs the developer's signing key configured
   (`git config user.signingkey`, `tag.gpgSign`).
