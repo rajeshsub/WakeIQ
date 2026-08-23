@@ -160,6 +160,7 @@ jobs:
           done
           cp benchmark-results/unit-test-timing.json "/tmp/timing-history/current.json" || true
 
+          notice=""
           for f in /tmp/timing-history/*/unit-test-timing.json /tmp/timing-history/current.json; do
             [ -f "$f" ] || continue
             commit=$(jq -r '.commit' "$f" | cut -c1-7)
@@ -167,7 +168,13 @@ jobs:
             tests=$(jq -r '.testCount' "$f")
             secs=$(jq -r '.totalSeconds' "$f")
             echo "| $commit | $ts | $tests | $secs |" >> "$GITHUB_STEP_SUMMARY"
+            notice="${notice}${commit}  ${ts}  ${tests} tests  ${secs}s%0A"
           done
+
+          # Job summary only renders on the run-overview page, one click past
+          # where the commit/PR check link actually lands (the job page) - a
+          # notice annotation shows directly on that job page, no extra nav.
+          echo "::notice title=Unit test suite timing (last 10 runs on main)::${notice}"
 
   instrumented:
     name: Instrumented Tests
