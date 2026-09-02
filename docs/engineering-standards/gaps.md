@@ -67,6 +67,31 @@ added. ADR 0006 and the build.gradle.kts comment corrected to say
 dependency vulnerability scan is a no-op until the developer adds the key -
 this is not the same as the gap being fully resolved end-to-end.
 
+## 2026-09-02 - CI failure: NVD retry burst had no backoff, exhausted budget on a transient 503
+
+`ci.yml`'s "Dependency vulnerability scan (OWASP)" step failed after 28
+minutes: `NvdApiException: NVD Returned Status Code: 503`, despite a valid
+`NVD_API_KEY` being set (this is a different failure from the 2026-08-23
+entry below - the key was present and accepted; NVD's own API was
+unavailable/throttling during the update window). The plugin's own log
+line even said "Unable to update 1 or more Cached Web DataSource, using
+local data instead" immediately before failing anyway, rather than
+actually falling back. Root cause: the plugin's defaults are 30 retries
+with `nvd.delay = 0`ms between them - a rapid-fire burst against an
+already-503'ing endpoint, not a backoff. Fixed by setting `nvd.delay =
+6000` (6s) in `build.gradle.kts`, so a transient NVD outage has 6s x 30 =
+up to 3 minutes to clear instead of the retry budget burning in seconds.
+Verified against the installed `dependency-check-gradle:13.0.0` jar
+(`NvdExtension.class`) that `nvd.delay`/`nvd.maxRetryCount`/
+`nvd.validForHours` are real settable properties before changing config,
+and against `dependency-check-core:13.0.0`'s bundled
+`dependencycheck.properties` that the as-shipped defaults are
+`nvd.api.max.retry.count=30` / `nvd.api.delay=0`. ADR 0006 updated
+(Consequences). **Closed** for the zero-delay bug; does not guarantee a
+build survives a sustained (not transient) NVD outage - that is an
+accepted risk of depending on a third-party service for this gate, not a
+config value to keep raising.
+
 Deferred by developer request (2026-08-22), not forgotten:
 
 - `NVD_API_KEY` GitHub secret - **now confirmed required for the OWASP scan

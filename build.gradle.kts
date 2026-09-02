@@ -37,6 +37,13 @@ dependencyCheck {
         // key; this still guards against a blank string reaching the plugin
         // as a value if invoked outside that guarded path.
         apiKey = System.getenv("NVD_API_KEY")?.takeIf { it.isNotBlank() }
+        // The plugin's own default (30 retries, 0ms delay) hammers NVD back
+        // to back on a 503/throttle instead of backing off, which can burn
+        // the whole retry budget in seconds without ever letting a transient
+        // outage clear. A few seconds between attempts costs at most ~3
+        // minutes total (worst case, all 30 retries exhausted) but gives NVD
+        // room to recover. See docs/adr/0006, Consequences.
+        delay = 6000
     }
 }
 
