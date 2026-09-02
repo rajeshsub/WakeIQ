@@ -61,11 +61,34 @@ AlarmManager fires PendingIntent
             → loadAndStartAlarm()         (async DB load)
                 → startMonitoring()       (PHASE_MONITOR)
                   or triggerEscalation()  (PHASE_RING)
+                      → CompleteAlarmUseCase(alarm)
 ```
 
 `postInitialForeground()` posts the foreground notification synchronously before the
 async DB load so the service is promoted to foreground before the system's 5-second
 window expires.
+
+## Completion (re-arm or expire)
+
+`AlarmManager.setAlarmClock()` registers a one-shot trigger. Nothing re-registers it
+automatically, so `triggerEscalation()` is the single point every firing path funnels
+through (direct `PHASE_RING`, or motion-triggered-early escalation from
+`startMonitoring()`) to decide what happens next. It runs `CompleteAlarmUseCase`
+immediately after the existing `alarmScheduler.cancel(alarm.id)` call, so a reschedule
+made here is not itself cancelled:
+
+- **Recurring** (`daysOfWeek` non-empty): re-schedules the same `Alarm`.
+  `AlarmScheduler`/`GetNextAlarmTimeUseCase` find the next matching day. Without this
+  step a recurring alarm rings once and then stays silent until a reboot happens to
+  run `RescheduleAlarmsWorker`.
+- **One-off** (`daysOfWeek` empty): disables the alarm (`isEnabled = false`). The row
+  is kept, shown disabled on Home, and can be manually re-armed. Without this step a
+  one-off alarm stays enabled forever and is resurrected at the next reboot.
+- **Already disabled**: no-op.
+
+Snoozing is unaffected: `AlarmScheduler.scheduleSnooze()` registers its own trigger
+independent of `isEnabled`, so a one-off alarm still rings on snooze even though its
+row was disabled the moment it first fired.
 
 ## Foreground Service Type
 
