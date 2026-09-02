@@ -16,6 +16,12 @@ jobs:
   quality:
     name: Lint & Unit Tests
     runs-on: ubuntu-latest
+    # GitHub's own default is 360 minutes if this is unset - far too long to
+    # notice a hung step. A healthy run finishes in single-digit minutes; an
+    # external dependency (NVD) hanging or throttling shouldn't be able to
+    # silently burn an hour+ of CI time before anyone notices. See gaps.md,
+    # 2026-09-02 entry.
+    timeout-minutes: 20
     permissions:
       contents: read
       actions: read # read prior run artifacts for the test-timing trend (rule 25 / ADR 0007)
@@ -191,6 +197,7 @@ jobs:
     name: Instrumented Tests
     runs-on: ubuntu-latest
     needs: quality
+    timeout-minutes: 30
     permissions:
       contents: read
 

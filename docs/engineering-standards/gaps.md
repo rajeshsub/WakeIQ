@@ -87,10 +87,23 @@ Verified against the installed `dependency-check-gradle:13.0.0` jar
 and against `dependency-check-core:13.0.0`'s bundled
 `dependencycheck.properties` that the as-shipped defaults are
 `nvd.api.max.retry.count=30` / `nvd.api.delay=0`. ADR 0006 updated
-(Consequences). **Closed** for the zero-delay bug; does not guarantee a
-build survives a sustained (not transient) NVD outage - that is an
-accepted risk of depending on a third-party service for this gate, not a
-config value to keep raising.
+(Consequences).
+
+**Correction, same day:** the `nvd.delay` fix above was necessary but not
+sufficient. The very next CI run, already carrying that fix, still hung on
+the same step for over an hour (job started 07:29, still `in_progress`
+past 08:47, cancelled manually) rather than failing fast. A 6-second
+inter-retry delay cannot on its own explain an hour-plus run (30 retries x
+6s is 3 minutes); the actual missing piece was that **no `timeout-minutes`
+existed anywhere in `ci.yml`**, so a step stuck on a slow/hanging network
+call (as opposed to a fast 503-and-fail) had GitHub's own default of 360
+minutes to work with, not the few minutes a healthy run needs. Fixed by
+adding `timeout-minutes: 20` to the `quality` job and `30` to
+`instrumented`, sized against real historical run times (8m3s and 7m36s
+respectively, from run 32615221004) rather than guessed. **Closed**: a
+hung external call (NVD or otherwise) now surfaces as a clear timeout
+failure within a bounded window instead of silently occupying a runner
+for up to six hours.
 
 Deferred by developer request (2026-08-22), not forgotten:
 
