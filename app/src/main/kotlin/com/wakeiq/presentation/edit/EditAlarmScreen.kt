@@ -36,6 +36,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -164,27 +167,56 @@ fun EditAlarmScreen(
                 }
             }
 
-            // Repeat / day selection
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = uiState.daysOfWeek.size == 7,
-                    onCheckedChange = { viewModel.toggleAllDays() },
-                )
-                Text(
-                    text = stringResource(R.string.repeat_daily),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DayOfWeek.entries.forEach { day ->
-                    FilterChip(
-                        selected = day in uiState.daysOfWeek,
-                        onClick = { viewModel.toggleDay(day) },
-                        label = { Text(day.name.take(3)) },
+            // Once / Repeat mode selection
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = !uiState.isRepeatMode,
+                        onClick = { viewModel.setRepeatMode(false) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    ) {
+                        Text(stringResource(R.string.repeat_mode_once))
+                    }
+                    SegmentedButton(
+                        selected = uiState.isRepeatMode,
+                        onClick = { viewModel.setRepeatMode(true) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    ) {
+                        Text(stringResource(R.string.repeat_mode_repeat))
+                    }
+                }
+                if (!uiState.isRepeatMode) {
+                    Text(
+                        text = stringResource(R.string.repeat_mode_once_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+
+            // Day selection, shown only in Repeat mode
+            if (uiState.isRepeatMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = uiState.daysOfWeek.size == 7,
+                        onCheckedChange = { viewModel.toggleAllDays() },
+                    )
+                    Text(
+                        text = stringResource(R.string.repeat_daily),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DayOfWeek.entries.forEach { day ->
+                        FilterChip(
+                            selected = day in uiState.daysOfWeek,
+                            onClick = { viewModel.toggleDay(day) },
+                            label = { Text(day.name.take(3)) },
+                        )
+                    }
                 }
             }
 

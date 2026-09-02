@@ -31,6 +31,10 @@ data class EditAlarmUiState(
     val isNew: Boolean = true,
     val hour: Int = 7,
     val minute: Int = 0,
+    // Deliberate UI toggle, separate from daysOfWeek: manually clearing all seven day chips while
+    // in Repeat mode must still show as Repeat (with an empty selection), not silently read back as
+    // Once. Persistence still derives isRecurring from daysOfWeek.isEmpty(), unchanged.
+    val isRepeatMode: Boolean = false,
     val daysOfWeek: Set<DayOfWeek> = emptySet(),
     val label: String = "",
     val soundConfig: SoundConfig = SoundConfig(),
@@ -75,7 +79,8 @@ class EditAlarmViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         isNew = true,
-                        daysOfWeek = setOf(LocalDate.now().dayOfWeek),
+                        isRepeatMode = false,
+                        daysOfWeek = emptySet(),
                         snoozeMinutes = snooze,
                         isNapDuration = nap,
                         useSmartWake = !nap && smartWakeUserChoice,
@@ -93,6 +98,7 @@ class EditAlarmViewModel @Inject constructor(
                             isNew = false,
                             hour = alarm.hour,
                             minute = alarm.minute,
+                            isRepeatMode = alarm.isRecurring,
                             daysOfWeek = alarm.daysOfWeek,
                             label = alarm.label,
                             soundConfig = alarm.soundConfig,
@@ -121,6 +127,13 @@ class EditAlarmViewModel @Inject constructor(
     }
 
     private fun isNapDuration(hour: Int, minute: Int): Boolean = NapRule.isNap(hour, minute)
+
+    fun setRepeatMode(repeat: Boolean) = _uiState.update {
+        it.copy(
+            isRepeatMode = repeat,
+            daysOfWeek = if (repeat) setOf(LocalDate.now().dayOfWeek) else emptySet(),
+        )
+    }
 
     fun toggleDay(day: DayOfWeek) = _uiState.update {
         val days = it.daysOfWeek.toMutableSet()

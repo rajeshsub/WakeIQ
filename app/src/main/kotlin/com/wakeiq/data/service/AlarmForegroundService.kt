@@ -22,6 +22,7 @@ import com.wakeiq.domain.model.Alarm
 import com.wakeiq.domain.model.BundledSound
 import com.wakeiq.domain.model.SoundType
 import com.wakeiq.domain.repository.AlarmRepository
+import com.wakeiq.domain.usecase.CompleteAlarmUseCase
 import com.wakeiq.presentation.alarm.AlarmActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +46,8 @@ class AlarmForegroundService : Service() {
     @Inject lateinit var audioPlayer: AudioPlayer
 
     @Inject lateinit var alarmScheduler: AlarmScheduler
+
+    @Inject lateinit var completeAlarm: CompleteAlarmUseCase
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var currentAlarmId: Long = -1L
@@ -130,6 +133,9 @@ class AlarmForegroundService : Service() {
         motionDetector.stopDetection()
         // Clear any sibling pending alarm for this id (e.g. the ring alarm when motion fired early).
         alarmScheduler.cancel(alarm.id)
+        // Re-arm a recurring alarm for its next occurrence, or disable a one-off alarm now that it
+        // has fired. Runs after the cancel above so it is not itself undone by it.
+        scope.launch { completeAlarm(alarm) }
         Timber.i("Triggering alarm escalation for alarm ${alarm.id}")
 
         postEscalationNotification(alarm)
