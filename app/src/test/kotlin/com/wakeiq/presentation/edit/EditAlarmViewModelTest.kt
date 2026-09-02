@@ -64,15 +64,93 @@ class EditAlarmViewModelTest {
     }
 
     @Test
-    fun `a new alarm finishes loading with today selected and prefs applied`() = runTest {
+    fun `a new alarm finishes loading in Once mode with prefs applied`() = runTest {
         val viewModel = newViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertTrue(state.isNew)
-        assertEquals(setOf(LocalDate.now().dayOfWeek), state.daysOfWeek)
+        assertFalse(state.isRepeatMode, "a new alarm must default to Once mode")
+        assertTrue(state.daysOfWeek.isEmpty())
         assertEquals(9, state.snoozeMinutes)
+    }
+
+    @Test
+    fun `switching from Once to Repeat mode pre-selects today`() = runTest {
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.setRepeatMode(true)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isRepeatMode)
+        assertEquals(setOf(LocalDate.now().dayOfWeek), state.daysOfWeek)
+    }
+
+    @Test
+    fun `switching from Repeat to Once clears days`() = runTest {
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.setRepeatMode(true)
+        viewModel.setRepeatMode(false)
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isRepeatMode)
+        assertTrue(state.daysOfWeek.isEmpty())
+    }
+
+    @Test
+    fun `saving in Once mode persists an empty daysOfWeek`() = runTest {
+        val saved = slot<Alarm>()
+        coEvery { saveAlarm(capture(saved)) } returns 200L
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.save()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(saved.captured.daysOfWeek.isEmpty())
+    }
+
+    @Test
+    fun `editing an existing recurring alarm surfaces as Repeat mode`() = runTest {
+        val stored = Alarm(id = 12L, hour = 6, minute = 0, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY))
+        coEvery { repository.getById(12L) } returns stored
+        val viewModel = newViewModel(id = 12L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isRepeatMode)
+        assertEquals(setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), state.daysOfWeek)
+    }
+
+    @Test
+    fun `editing an existing one-off alarm surfaces as Once mode`() = runTest {
+        val stored = Alarm(id = 13L, hour = 6, minute = 0, daysOfWeek = emptySet())
+        coEvery { repository.getById(13L) } returns stored
+        val viewModel = newViewModel(id = 13L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isRepeatMode)
+        assertTrue(state.daysOfWeek.isEmpty())
+    }
+
+    @Test
+    fun `nap rule still forces smart wake off while in Once mode`() = runTest {
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isRepeatMode, "new alarms start in Once mode")
+
+        val soon = ZonedDateTime.now().plusMinutes(30)
+        viewModel.setTime(soon.hour, soon.minute)
+        assumeTrue(viewModel.uiState.value.isNapDuration, "skip near midnight when 30 min ahead is not a nap")
+
+        assertFalse(viewModel.uiState.value.useSmartWake, "a nap cannot use smart wake, even in Once mode")
+        viewModel.setUseSmartWake(true)
+        assertFalse(viewModel.uiState.value.useSmartWake, "a nap cannot enable smart wake, even in Once mode")
     }
 
     @Test

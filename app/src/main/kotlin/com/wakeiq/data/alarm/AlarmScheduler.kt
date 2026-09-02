@@ -37,6 +37,10 @@ class AlarmScheduler @Inject constructor(
         Timber.i("Scheduled alarm ${alarm.id} for target $triggerAt")
     }
 
+    // Deliberately does not consult alarm.isEnabled: CompleteAlarmUseCase disables a one-off alarm
+    // in the DB the moment it fires, but the in-memory Alarm the service holds is snoozed from, so a
+    // snoozed one-off still rings on snooze even though its DB row is already disabled. This is the
+    // intended behaviour, not a bug; do not add an isEnabled check here.
     fun scheduleSnooze(alarm: Alarm) {
         if (!canScheduleExactAlarms()) {
             Timber.w("Exact alarm permission not granted, cannot schedule snooze for alarm ${alarm.id}")

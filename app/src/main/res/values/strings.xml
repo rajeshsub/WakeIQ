@@ -155,6 +155,9 @@
     <string name="motion_sensitivity_tooltip_title">Why motion sensitivity?</string>
     <string name="motion_sensitivity_tooltip_body">Your phone\'s accelerometer detects movement during sleep. More movement = lighter sleep stage.\n\nLow: requires significant movement to trigger early wake.\nMedium: recommended for most people.\nHigh: triggers on subtle shifts, best for light sleepers.</string>
     <string name="repeat_daily">Daily</string>
+    <string name="repeat_mode_once">Once</string>
+    <string name="repeat_mode_repeat">Repeat</string>
+    <string name="repeat_mode_once_hint">Rings once, then switches off</string>
     <string name="tooltip_ok">Got it</string>
 
     <!-- Warm hue / display settings -->
