@@ -2,6 +2,7 @@ package com.wakeiq.presentation.home
 
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
@@ -26,11 +28,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -83,6 +93,26 @@ fun HomeScreen(
     val permissions by permissionsViewModel.permissions.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showExactAlarmDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val deletedLabel = stringResource(R.string.alarm_deleted)
+    val undoLabel = stringResource(R.string.undo)
+
+    // Deleting is destructive, so it waits behind an undo window: the swipe stays committed
+    // visually while the snackbar is up, and only actually removes the alarm (and stays removed
+    // from the list) if the snackbar times out rather than being undone.
+    suspend fun deleteWithUndo(alarm: Alarm): Boolean {
+        val result = snackbarHostState.showSnackbar(
+            message = deletedLabel,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Short,
+        )
+        return if (result == SnackbarResult.ActionPerformed) {
+            false
+        } else {
+            viewModel.delete(alarm)
+            true
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -127,6 +157,7 @@ fun HomeScreen(
                 text = { Text(stringResource(R.string.new_alarm)) },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when (val state = uiState) {
             HomeUiState.Loading -> Box(
@@ -147,6 +178,7 @@ fun HomeScreen(
                 onGrantPermissions = onOpenPermissions,
                 onToggle = { alarm, enabled -> viewModel.toggle(alarm, enabled) },
                 onTap = { alarm -> onEditAlarm(alarm.id) },
+                onSwipeDelete = ::deleteWithUndo,
             )
         }
     }
@@ -175,6 +207,7 @@ private fun AlarmList(
     onGrantPermissions: () -> Unit,
     onToggle: (Alarm, Boolean) -> Unit,
     onTap: (Alarm) -> Unit,
+    onSwipeDelete: suspend (Alarm) -> Boolean,
 ) {
     LazyColumn(
         modifier = Modifier.padding(padding),
@@ -206,11 +239,12 @@ private fun AlarmList(
             }
         } else {
             items(alarms, key = { it.id }) { alarm ->
-                AlarmCard(
+                SwipeToDeleteAlarmCard(
                     alarm = alarm,
                     is24Hour = is24Hour,
                     onToggle = { enabled -> onToggle(alarm, enabled) },
                     onClick = { onTap(alarm) },
+                    onSwipeDelete = { onSwipeDelete(alarm) },
                 )
             }
         }
@@ -253,6 +287,57 @@ private fun PermissionWarningBanner(onClick: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToDeleteAlarmCard(
+    alarm: Alarm,
+    is24Hour: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onClick: () -> Unit,
+    onSwipeDelete: suspend () -> Boolean,
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value -> value != SwipeToDismissBoxValue.Settled },
+    )
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) {
+            // The row commits to disappearing only once the caller confirms the delete stuck
+            // (undo window elapsed); otherwise the swipe visually resets to its original position.
+            val committed = onSwipeDelete()
+            if (!committed) dismissState.reset()
+        }
+    }
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = { DeleteSwipeBackground(dismissState) },
+    ) {
+        AlarmCard(alarm = alarm, is24Hour = is24Hour, onToggle = onToggle, onClick = onClick)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DeleteSwipeBackground(dismissState: SwipeToDismissBoxState) {
+    val alignment = if (dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
+        Alignment.CenterStart
+    } else {
+        Alignment.CenterEnd
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.errorContainer, MaterialTheme.shapes.medium)
+            .padding(horizontal = 24.dp),
+        contentAlignment = alignment,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = stringResource(R.string.delete_alarm),
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+        )
     }
 }
 

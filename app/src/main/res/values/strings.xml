@@ -8,6 +8,9 @@
     <string name="new_alarm">New Alarm</string>
     <string name="alarm_enabled">Alarm enabled</string>
     <string name="alarm_disabled">Alarm disabled</string>
+    <string name="alarm_deleted">Alarm deleted</string>
+    <string name="undo">Undo</string>
+    <string name="delete_alarm">Delete alarm</string>
 
     <!-- Edit alarm screen -->
     <string name="edit_alarm_title_new">New Alarm</string>
