@@ -24,7 +24,7 @@ dependencyCheck {
     outputDirectory.set(layout.buildDirectory.dir("reports/dependency-check"))
     // Set explicitly (outside build/, since `clean` would otherwise wipe the
     // synced CVE database) so CI can cache this exact path across runs instead
-    // of re-syncing the full NVD feed every time. See ci.yml / dependency-scan.yml.
+    // of re-syncing the full NVD feed every time. See dependency-scan.yml.
     data {
         directory = "${rootDir}/.dependency-check-data"
     }
@@ -32,18 +32,22 @@ dependencyCheck {
         // REQUIRED, not just faster-with-one: NVD's API 2.0 has no anonymous
         // fallback in this plugin version - an absent/blank key throws
         // (NvdApiException) rather than falling back to slow unauthenticated
-        // access. CI skips the scan step entirely when the secret is unset
-        // (see ci.yml / dependency-scan.yml) rather than running with a bad
+        // access. The scheduled scan skips the step entirely when the secret
+        // is unset (see dependency-scan.yml) rather than running with a bad
         // key; this still guards against a blank string reaching the plugin
         // as a value if invoked outside that guarded path.
         apiKey = System.getenv("NVD_API_KEY")?.takeIf { it.isNotBlank() }
         // The plugin's own default (30 retries, 0ms delay) hammers NVD back
         // to back on a 503/throttle instead of backing off, which can burn
         // the whole retry budget in seconds without ever letting a transient
-        // outage clear. A few seconds between attempts costs at most ~3
-        // minutes total (worst case, all 30 retries exhausted) but gives NVD
-        // room to recover. See docs/adr/0006, Consequences.
-        delay = 6000
+        // outage clear. NOTE: this delay applies between *every* API page
+        // request, not only after a failure - on a cold cache the feed is
+        // thousands of pages, so each extra second here is tens of minutes of
+        // wall clock. 2000ms is enough to stay under NVD's rate limit (50
+        // requests / 30s with a key) while keeping a cold sync bounded.
+        // This scan runs only in the scheduled dependency-scan workflow, not
+        // on the PR path. See docs/adr/0006, Consequences.
+        delay = 2000
     }
 }
 

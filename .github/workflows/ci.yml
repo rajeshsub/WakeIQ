@@ -17,20 +17,14 @@ jobs:
     name: Lint & Unit Tests
     runs-on: ubuntu-latest
     # GitHub's own default is 360 minutes if this is unset - far too long to
-    # notice a hung step. A healthy run finishes in single-digit minutes; an
-    # external dependency (NVD) hanging or throttling shouldn't be able to
-    # silently burn an hour+ of CI time before anyone notices. See gaps.md,
-    # 2026-09-02 entry.
-    timeout-minutes: 20
+    # notice a hung step. With the OWASP/NVD scan moved to its own scheduled
+    # workflow, nothing here touches a third-party service that can throttle
+    # us, so a healthy run is single-digit minutes and 15 is pure headroom.
+    # See gaps.md, 2026-09-02 entry.
+    timeout-minutes: 15
     permissions:
       contents: read
       actions: read # read prior run artifacts for the test-timing trend (rule 25 / ADR 0007)
-    env:
-      # `secrets` isn't a recognized context in step `if:` conditions (GitHub
-      # Actions restriction) - mirror it into `env` at job level so the OWASP
-      # steps below can gate on it there instead.
-      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -81,29 +75,6 @@ jobs:
             --compare-branch=origin/${{ github.base_ref }} \
             --fail-under=80
 
-      - name: Cache OWASP NVD CVE database
-        if: ${{ env.NVD_API_KEY != '' }}
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: .dependency-check-data
-          key: owasp-nvd-data-${{ github.run_id }}
-          restore-keys: owasp-nvd-data-
-
-      # NVD's API 2.0 requires a real key to fetch CVE data at all (no
-      # anonymous fallback in this plugin version, despite what an earlier
-      # comment here claimed) - skip cleanly instead of failing every build
-      # until NVD_API_KEY is set. See docs/adr/0006 and gaps.md.
-      - name: Dependency vulnerability scan (OWASP)
-        if: ${{ env.NVD_API_KEY != '' }}
-        run: ./gradlew dependencyCheckAnalyze
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-
-      - name: Warn if dependency scan was skipped
-        if: ${{ env.NVD_API_KEY == '' }}
-        run: |
-          echo "::warning::Dependency vulnerability scan skipped - NVD_API_KEY secret not set. Get a free key at https://nvd.nist.gov/developers/request-an-api-key and add it as a repo secret."
-
       - name: Build debug APK
         run: ./gradlew assembleFullDebug
 
@@ -130,13 +101,6 @@ jobs:
         with:
           name: coverage-reports
           path: app/build/reports/kover/
-
-      - name: Upload dependency-check report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: dependency-check-report
-          path: build/reports/dependency-check/
 
       - name: Upload test-timing history
         if: always()

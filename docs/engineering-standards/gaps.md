@@ -105,6 +105,54 @@ hung external call (NVD or otherwise) now surfaces as a clear timeout
 failure within a bounded window instead of silently occupying a runner
 for up to six hours.
 
+## 2026-09-04 - CI wall-clock blowup: NVD cache never saved, retry delay multiplied it
+
+CI stopped finishing. Timeline of the `quality` job, from `gh run list`:
+8m (32615221004, 2026-08-23) -> 33m -> 115m (33603477386) -> 32m ->
+timeout at the newly-added 20m cap. Step-level timings showed the whole
+delta in one step, "Dependency vulnerability scan (OWASP)": 138s -> 1612s
+-> 6571s. Every other step in the job was flat (~5.5 min combined).
+
+Two compounding root causes, both introduced by earlier fixes in this file:
+
+1. **The NVD cache never saved.** The key was
+   `owasp-nvd-data-${{ github.run_id }}` (added in 61219a9).
+   `actions/cache` only writes an entry when the primary key *misses*, and
+   a run-id key is unique per run, so it missed every time and re-saved a
+   fresh copy that the next run could never name. Confirmed empirically:
+   `gh api /actions/caches` listed 21 cache entries, **zero** matching
+   `owasp-nvd-data-*`, and every run's log says `Cache not found for input
+   keys: owasp-nvd-data-<id>, owasp-nvd-data-`. So each run paid a full
+   cold NVD feed sync, and the cost grew as the feed did.
+2. **`nvd.delay` is per-request, not per-retry.** The 2026-09-02 entry set
+   `delay = 6000` reasoning "worst case 30 retries x 6s = 3 minutes." That
+   is wrong: the delay applies between every NVD API page request, and a
+   cold sync is thousands of pages. Against cause (1)'s permanently-cold
+   cache, 6s/page is what turned a ~2 minute scan into 109 minutes.
+
+Fixed on three axes:
+
+- **Moved the OWASP scan out of `ci.yml` entirely.** It now runs only in
+  the weekly `dependency-scan.yml`. Lock files freeze dependency versions,
+  so scanning on every push re-scans an unchanged graph - the scheduled run
+  is the one that adds information. A slow or hung NVD can no longer block
+  a merge.
+- **Fixed the cache key** to a UTC date stamp
+  (`owasp-nvd-data-YYYY-MM-DD`) with `restore-keys: owasp-nvd-data-`, so
+  the entry rotates once a day and warm runs actually restore it.
+- **Lowered `nvd.delay` to 2000ms**, still within NVD's documented rate
+  limit for keyed access (50 requests / 30s), with a comment recording that
+  this value is a per-request multiplier so the next person does not
+  re-raise it.
+
+`quality` timeout tightened 20 -> 15 min now that nothing in it talks to a
+throttling third party; `dependency-scan.yml` gets its own
+`timeout-minutes: 45`, sized for a legitimately slow cold sync.
+**Closed**: PR-path CI is back to its pre-regression shape (lint + tests +
+build only). Note the scan's own first scheduled run after this change is
+still a cold sync and will be slow once; subsequent ones restore the cache.
+
+
 Deferred by developer request (2026-08-22), not forgotten:
 
 - `NVD_API_KEY` GitHub secret - **now confirmed required for the OWASP scan

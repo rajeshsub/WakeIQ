@@ -14,6 +14,9 @@ jobs:
   scan:
     name: OWASP dependency-check (scheduled)
     runs-on: ubuntu-latest
+    # A cold NVD sync is genuinely slow; this runs on a schedule, off the PR
+    # path, so it can afford to be. Bounded so a hung feed still fails.
+    timeout-minutes: 45
     env:
       # `secrets` isn't a recognized context in step `if:` conditions (GitHub
       # Actions restriction) - mirror it into `env` at job level instead.
@@ -36,12 +39,24 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      # actions/cache only WRITES an entry when the primary `key` missed. A
+      # key containing github.run_id is unique per run, so it missed every
+      # time and the cache was rewritten from scratch on each run - meaning
+      # the NVD database was never actually reused and every scan paid the
+      # full feed sync (observed: 2m -> 27m -> 109m as the feed grew).
+      # Rotate the key on a date stamp instead: fresh entry once a day, warm
+      # restore-keys hit the rest of the time.
+      - name: NVD cache key stamp
+        if: ${{ env.NVD_API_KEY != '' }}
+        id: nvd-stamp
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
       - name: Cache OWASP NVD CVE database
         if: ${{ env.NVD_API_KEY != '' }}
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .dependency-check-data
-          key: owasp-nvd-data-${{ github.run_id }}
+          key: owasp-nvd-data-${{ steps.nvd-stamp.outputs.date }}
           restore-keys: owasp-nvd-data-
 
       # NVD's API 2.0 requires a real key to fetch CVE data at all (no
