@@ -149,13 +149,22 @@ jobs:
           # Per-test breakdown for this run - which piece is slow, not just
           # the run total. Precision is whatever the JUnit XML `time` attr
           # gives us (millisecond-granularity); no nanosecond-level timer.
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "## Test durations, this run (slowest first)" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| test | duration (ms) |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          jq -r '.testCases[] | "| \(.class).\(.name) | \(.seconds * 1000) |"' \
-            benchmark-results/unit-test-timing.json >> "$GITHUB_STEP_SUMMARY"
+          # Only this run's own file is required here (the history loop above
+          # already tolerates missing data); an earlier failed step (lint,
+          # compile) means unit tests never ran and this file never existed,
+          # which must not fail a step that is deliberately `if: always()`.
+          if [ -f benchmark-results/unit-test-timing.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Test durations, this run (slowest first)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| test | duration (ms) |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+            jq -r '.testCases[] | "| \(.class).\(.name) | \(.seconds * 1000) |"' \
+              benchmark-results/unit-test-timing.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "_No test-timing data for this run (unit tests did not run)._" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   instrumented:
     name: Instrumented Tests
