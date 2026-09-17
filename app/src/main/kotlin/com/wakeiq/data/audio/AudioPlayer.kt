@@ -56,7 +56,7 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
             // IllegalArgumentException ("Automatic handling of audio focus is only available for
             // USAGE_MEDIA and USAGE_GAME") otherwise, which crashed the app on every alarm. An alarm
             // should ring regardless of focus anyway, so we never want media3 managing focus here.
-            exo.setAudioAttributes(alarmAudioAttributes(), false)
+            exo.setAudioAttributes(audioAttributes(C.USAGE_ALARM, C.AUDIO_CONTENT_TYPE_SONIFICATION), false)
             routeToBuiltInSpeaker(exo)
             exo.setMediaItem(MediaItem.fromUri(uri))
             exo.repeatMode = Player.REPEAT_MODE_ALL
@@ -139,7 +139,7 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         release()
         val uri = resolveUri(soundConfig)
         player = ExoPlayer.Builder(context).build().also { exo ->
-            exo.setAudioAttributes(previewAudioAttributes(), true)
+            exo.setAudioAttributes(audioAttributes(C.USAGE_MEDIA, C.AUDIO_CONTENT_TYPE_MUSIC), true)
             exo.setMediaItem(MediaItem.fromUri(uri))
             exo.repeatMode = Player.REPEAT_MODE_OFF
             exo.volume = 1f
@@ -177,13 +177,8 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
 
     private fun assetUri(assetFile: String): Uri = Uri.parse("asset:///sounds/$assetFile")
 
-    private fun alarmAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
-        .setUsage(C.USAGE_ALARM)
-        .setContentType(C.AUDIO_CONTENT_TYPE_SONIFICATION)
-        .build()
-
-    private fun previewAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
-        .setUsage(C.USAGE_MEDIA)
-        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+    private fun audioAttributes(usage: Int, contentType: Int): AudioAttributes = AudioAttributes.Builder()
+        .setUsage(usage)
+        .setContentType(contentType)
         .build()
 }

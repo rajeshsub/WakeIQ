@@ -59,7 +59,6 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -72,6 +71,7 @@ import com.wakeiq.presentation.paletteForIndex
 import com.wakeiq.presentation.permissions.BatteryOptimizationBanner
 import com.wakeiq.presentation.permissions.PermissionsViewModel
 import java.time.DayOfWeek
+import kotlinx.coroutines.launch
 
 private const val DAYS_IN_WEEK = 7
 

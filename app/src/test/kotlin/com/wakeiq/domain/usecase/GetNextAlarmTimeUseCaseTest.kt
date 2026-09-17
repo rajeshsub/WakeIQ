@@ -204,6 +204,9 @@ class GetNextAlarmTimeUseCaseTest {
 
         val result = useCase(alarm, daysLater)
 
-        assertTrue(result!!.isAfter(daysLater), "recomputed trigger must be in the future relative to the restored clock")
+        assertTrue(
+            result!!.isAfter(daysLater),
+            "recomputed trigger must be in the future relative to the restored clock",
+        )
     }
 }
