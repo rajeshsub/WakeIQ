@@ -28,7 +28,7 @@ The mechanism is passive. Auditory arousal thresholds (the minimum sound intensi
 - As you naturally cycle into a lighter stage, your threshold drops. The sound, now at a moderate level, is sufficient to rouse you gently.
 - You surface gradually rather than being jolted. Your brain has time to transition.
 
-You will always wake by your set time. If you stay in a light stage through the entire window, the sound reaches full volume at your deadline. No sleep stage detection required.
+If you stay in a light stage through the entire window, the sound reaches full volume at your deadline. No sleep stage detection required. This assumes WakeIQ actually has the permissions it needs to schedule and ring the alarm — see [Permissions](#permissions) below for what happens, and what WakeIQ tells you in-app, when one of those is missing.
 
 **On sound choice:** A 2020 peer-reviewed study (McFarlane et al., *PLoS ONE*) found that melodic alarm sounds showed a statistically significant relationship to reductions in perceived sleep inertia, while harsh or unmelodic sounds increased it. WakeIQ's bundled sounds are chosen accordingly. Your own familiar, meaningful audio works particularly well.
 
@@ -80,15 +80,23 @@ Your data never leaves your device. No analytics, telemetry, crash reporting or 
 
 | Permission | Why | If denied |
 |---|---|---|
-| `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` | Fire at precisely the time you set | Alarm may be late |
+| `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` | Fire at precisely the time you set | **The alarm is never scheduled and will not ring at all** ([`AlarmScheduler.schedule()`](app/src/main/kotlin/com/wakeiq/data/alarm/AlarmScheduler.kt) refuses to schedule without it). Surfaced on the Permissions screen and as a persistent warning banner on the Home screen. |
 | `RECEIVE_BOOT_COMPLETED` | Re-register alarms after restart | Alarms lost on reboot |
 | `WAKE_LOCK` | Keep CPU alive with screen off | Alarm may not fire when idle |
 | `FOREGROUND_SERVICE` | Run alarm service the OS won't kill | OS may silence the alarm |
-| `POST_NOTIFICATIONS` | Show alarm notification | No visible notification |
-| `READ_MEDIA_AUDIO` / `READ_EXTERNAL_STORAGE` | Load custom audio files | Cannot use custom sounds |
+| `POST_NOTIFICATIONS` | Show alarm notification | The alarm still rings and still shows full-screen (the foreground service and audio do not require this permission), but there is no visible notification and no snooze/dismiss controls in the notification shade. Surfaced on the Permissions screen and Home banner. |
+| `READ_MEDIA_AUDIO` / `READ_EXTERNAL_STORAGE` | Load custom audio files | A custom sound whose file access has since been revoked (moved, deleted, permission revoked) automatically falls back to a bundled sound at alarm time rather than ringing silently. This is checked and surfaced in-app on the alarm edit screen (both when picking a new file and when reopening an alarm that already has one), not only discovered at 6 a.m. |
 | `WRITE_SETTINGS` | Control screen brightness | Brightness ramp disabled |
 | `HIGH_SAMPLING_RATE_SENSORS` | Wrist/mattress accelerometer for early-trigger detection | Optional detection less precise; ramp still works fully |
 | `DISABLE_KEYGUARD` | Show alarm screen over lock screen | Alarm shows behind lock screen |
+| `USE_FULL_SCREEN_INTENT` (API 34+) | Launch the alarm UI over the lock screen automatically | Falls back to a direct activity launch, which works within the background-activity-start exemption granted when the alarm fires (see [ARCHITECTURE.md](ARCHITECTURE.md)). Surfaced on the Permissions screen and Home banner. |
+
+The Home screen shows a persistent warning banner whenever any of the permissions above that WakeIQ
+depends on for exact scheduling, notification, or full-screen delivery is missing or has been
+revoked, and the Permissions screen (`Settings > Permissions`) lists each one individually with
+what it means for your alarms. These checks are re-evaluated every time the app returns to the
+foreground, so a permission revoked after setup (e.g. via system Settings) is caught, not just
+missed permissions at first launch.
 
 ---
 
@@ -98,9 +106,10 @@ Requires JDK 17, Android SDK (compile SDK 35, target SDK 35, min SDK 24 /
 Android 7.0), and Python 3 with pip (used by the `pre-commit` git hooks below).
 
 Background execution behaviour changes across that range: exact-alarm scheduling
-requires the `SCHEDULE_EXACT_ALARM` permission gate on API 31+, and full-screen
-intent delivery requires `USE_FULL_SCREEN_INTENT` on API 34+. See
-[ARCHITECTURE.md](ARCHITECTURE.md) for details.
+requires the `SCHEDULE_EXACT_ALARM` permission gate on API 31+ (a user-revocable
+`USE_EXACT_ALARM` grant on API 33+), and full-screen intent delivery requires
+`USE_FULL_SCREEN_INTENT` on API 34+. See [ARCHITECTURE.md](ARCHITECTURE.md) for
+details.
 
 One-step setup after cloning, wires the git hooks described below and needs no
 other manual steps:

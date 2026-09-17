@@ -47,13 +47,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -310,11 +316,26 @@ private fun SwipeToDeleteAlarmCard(
             if (!committed) dismissState.reset()
         }
     }
+    // Swipe-to-dismiss has no built-in accessible equivalent: TalkBack's explore-by-touch
+    // gestures conflict with a raw swipe, so switch/screen-reader users could not otherwise
+    // reach delete. Exposing it as a custom accessibility action routes through the exact same
+    // dismissState transition (and therefore the same undo-snackbar path) as the swipe gesture.
+    val coroutineScope = rememberCoroutineScope()
+    val deleteActionLabel = stringResource(R.string.delete_alarm)
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = { DeleteSwipeBackground(dismissState) },
     ) {
-        AlarmCard(alarm = alarm, is24Hour = is24Hour, onToggle = onToggle, onClick = onClick)
+        AlarmCard(
+            alarm = alarm,
+            is24Hour = is24Hour,
+            onToggle = onToggle,
+            onClick = onClick,
+            deleteAction = CustomAccessibilityAction(deleteActionLabel) {
+                coroutineScope.launch { dismissState.dismiss(SwipeToDismissBoxValue.EndToStart) }
+                true
+            },
+        )
     }
 }
 
@@ -342,7 +363,13 @@ private fun DeleteSwipeBackground(dismissState: SwipeToDismissBoxState) {
 }
 
 @Composable
-private fun AlarmCard(alarm: Alarm, is24Hour: Boolean, onToggle: (Boolean) -> Unit, onClick: () -> Unit) {
+private fun AlarmCard(
+    alarm: Alarm,
+    is24Hour: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onClick: () -> Unit,
+    deleteAction: CustomAccessibilityAction,
+) {
     val palette = paletteForIndex(alarm.colorIndex)
     val cardColors = if (palette.isCustom) {
         CardDefaults.cardColors(containerColor = palette.background)
@@ -359,7 +386,9 @@ private fun AlarmCard(alarm: Alarm, is24Hour: Boolean, onToggle: (Boolean) -> Un
     }
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { customActions = listOf(deleteAction) },
         colors = cardColors,
     ) {
         Row(
@@ -388,9 +417,15 @@ private fun AlarmCard(alarm: Alarm, is24Hour: Boolean, onToggle: (Boolean) -> Un
                     color = secondaryText,
                 )
             }
+            val toggleDescription = if (alarm.isEnabled) {
+                stringResource(R.string.alarm_toggle_on_description, alarm.formattedTime(is24Hour))
+            } else {
+                stringResource(R.string.alarm_toggle_off_description, alarm.formattedTime(is24Hour))
+            }
             Switch(
                 checked = alarm.isEnabled,
                 onCheckedChange = onToggle,
+                modifier = Modifier.semantics { contentDescription = toggleDescription },
             )
         }
     }

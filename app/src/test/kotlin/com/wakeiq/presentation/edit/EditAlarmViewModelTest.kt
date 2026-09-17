@@ -1,5 +1,6 @@
 package com.wakeiq.presentation.edit
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import com.wakeiq.data.alarm.AlarmScheduler
 import com.wakeiq.data.audio.AudioPlayer
@@ -7,6 +8,7 @@ import com.wakeiq.data.preferences.AppPreferences
 import com.wakeiq.domain.model.Alarm
 import com.wakeiq.domain.model.BundledSound
 import com.wakeiq.domain.model.MotionSensitivity
+import com.wakeiq.domain.model.SoundConfig
 import com.wakeiq.domain.model.SoundType
 import com.wakeiq.domain.repository.AlarmRepository
 import com.wakeiq.domain.usecase.DeleteAlarmUseCase
@@ -43,7 +45,9 @@ class EditAlarmViewModelTest {
     private val saveAlarm = mockk<SaveAlarmUseCase>()
     private val deleteAlarm = mockk<DeleteAlarmUseCase>(relaxed = true)
     private val scheduler = mockk<AlarmScheduler>(relaxed = true)
-    private val audioPlayer = mockk<AudioPlayer>(relaxed = true)
+    private val audioPlayer = mockk<AudioPlayer>(relaxed = true) {
+        every { canReadCustomUri(any()) } returns true
+    }
     private val prefs = mockk<AppPreferences>(relaxed = true) {
         every { use24HourClock } returns flowOf(false)
         every { defaultMotionSensitivity } returns flowOf(MotionSensitivity.MEDIUM)
@@ -295,6 +299,87 @@ class EditAlarmViewModelTest {
         assertFalse(viewModel.uiState.value.useSmartWake)
         viewModel.setUseSmartWake(true)
         assertTrue(viewModel.uiState.value.useSmartWake)
+    }
+
+    @Test
+    fun `setCustomSound flags the sound unavailable when the URI cannot be read`() = runTest {
+        val uri = mockk<Uri>()
+        every { audioPlayer.canReadCustomUri(uri) } returns false
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.setCustomSound(uri)
+
+        val state = viewModel.uiState.value
+        assertEquals(SoundType.CUSTOM, state.soundConfig.type)
+        assertTrue(state.customSoundUnavailable, "an unreadable custom URI must be flagged in-app")
+    }
+
+    @Test
+    fun `setCustomSound clears the unavailable flag when the URI is readable`() = runTest {
+        val badUri = mockk<Uri>()
+        val goodUri = mockk<Uri>()
+        every { audioPlayer.canReadCustomUri(badUri) } returns false
+        every { audioPlayer.canReadCustomUri(goodUri) } returns true
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.setCustomSound(badUri)
+        assertTrue(viewModel.uiState.value.customSoundUnavailable)
+
+        viewModel.setCustomSound(goodUri)
+
+        assertFalse(viewModel.uiState.value.customSoundUnavailable)
+    }
+
+    @Test
+    fun `setSound clears the custom-sound-unavailable flag`() = runTest {
+        val badUri = mockk<Uri>()
+        every { audioPlayer.canReadCustomUri(badUri) } returns false
+        val viewModel = newViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.setCustomSound(badUri)
+        assertTrue(viewModel.uiState.value.customSoundUnavailable)
+
+        viewModel.setSound(BundledSound.PIANO)
+
+        assertFalse(viewModel.uiState.value.customSoundUnavailable)
+    }
+
+    @Test
+    fun `loading an existing alarm re-checks a stored custom URI and flags it if now unreadable`() = runTest {
+        val uri = mockk<Uri>()
+        every { audioPlayer.canReadCustomUri(uri) } returns false
+        val stored = Alarm(
+            id = 20L,
+            hour = 6,
+            minute = 30,
+            soundConfig = SoundConfig(type = SoundType.CUSTOM, customUri = uri),
+        )
+        coEvery { repository.getById(20L) } returns stored
+        val viewModel = newViewModel(id = 20L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(
+            viewModel.uiState.value.customSoundUnavailable,
+            "a previously-picked custom sound must be re-checked on load, not just when re-picked",
+        )
+    }
+
+    @Test
+    fun `loading an existing alarm with a still-readable custom URI does not flag it`() = runTest {
+        val uri = mockk<Uri>()
+        every { audioPlayer.canReadCustomUri(uri) } returns true
+        val stored = Alarm(
+            id = 21L,
+            hour = 6,
+            minute = 30,
+            soundConfig = SoundConfig(type = SoundType.CUSTOM, customUri = uri),
+        )
+        coEvery { repository.getById(21L) } returns stored
+        val viewModel = newViewModel(id = 21L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.customSoundUnavailable)
     }
 
     @Test

@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,10 +55,17 @@ private val SunriseStops = listOf(
     1f to Color(0xFFFFCF66),
 )
 
-// Text and controls start white on the near-black opening and shift to a dark warm tone as the
-// background brightens, so they always contrast against the sunrise.
-private val DarkContent = Color(0xFF2A1A00)
-private const val CONTENT_FLIP_START = 0.45f
+// Text and controls are always white. A fixed dark scrim (see ContentScrimColor) sits behind them
+// so contrast against the sunrise background stays >= WCAG AA (4.5:1) at every ramp step, instead
+// of crossfading content color to track the background: measured contrast for a crossfade dipped
+// as low as ~1.04:1 around progress 0.75, because the gradient's mid-ramp orange tones are close
+// in lightness to both white and dark text and no two-color crossfade clears AA through that band.
+private val ContentColor = Color.White
+
+// Semi-opaque black backing behind the clock/label/buttons. alpha=0.55 keeps white-on-scrim
+// contrast >= ~6.3:1 across the full ramp (worst case, calculated against the lightest sunrise
+// stop, 0xFFCF66); alpha=0.45 is the minimum that clears the 4.5:1 AA floor, so this keeps margin.
+private val ContentScrimColor = Color.Black.copy(alpha = 0.55f)
 
 private fun sunriseColor(progress: Float): Color {
     val t = progress.coerceIn(0f, 1f)
@@ -68,11 +78,6 @@ private fun sunriseColor(progress: Float): Color {
         }
     }
     return SunriseStops.last().second
-}
-
-private fun contentColorFor(progress: Float): Color {
-    val f = ((progress - CONTENT_FLIP_START) / (1f - CONTENT_FLIP_START)).coerceIn(0f, 1f)
-    return lerp(Color.White, DarkContent, f)
 }
 
 @Composable
@@ -106,7 +111,6 @@ fun AlarmScreen(
     }
 
     val backgroundColor = sunriseColor(brightness)
-    val contentColor = contentColorFor(brightness)
 
     if (showDismissDialog) {
         AlertDialog(
@@ -132,20 +136,25 @@ fun AlarmScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor),
+            .background(backgroundColor)
+            // Scrollable so the clock/buttons never clip off-screen at large system font scale or
+            // in landscape on a short screen - the ramp/dismiss controls must stay reachable.
+            .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp),
-            modifier = Modifier.padding(32.dp),
+            modifier = Modifier
+                .background(ContentScrimColor, RoundedCornerShape(28.dp))
+                .padding(32.dp),
         ) {
             Text(
                 text = stringResource(R.string.app_name),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 4.sp,
-                color = contentColor.copy(alpha = 0.9f),
+                color = ContentColor.copy(alpha = 0.9f),
             )
 
             val formatter = if (uiState.is24Hour) {
@@ -157,14 +166,14 @@ fun AlarmScreen(
                 text = LocalTime.now().format(formatter),
                 fontSize = 80.sp,
                 fontWeight = FontWeight.Light,
-                color = contentColor,
+                color = ContentColor,
             )
 
             if (uiState.label.isNotEmpty()) {
                 Text(
                     text = uiState.label,
                     style = MaterialTheme.typography.headlineLarge,
-                    color = contentColor.copy(alpha = 0.85f),
+                    color = ContentColor.copy(alpha = 0.85f),
                 )
             }
 
@@ -175,8 +184,8 @@ fun AlarmScreen(
                 OutlinedButton(
                     onClick = onSnooze,
                     modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.5.dp, contentColor.copy(alpha = 0.5f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = contentColor),
+                    border = BorderStroke(1.5.dp, ContentColor),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ContentColor),
                 ) {
                     Text(stringResource(R.string.alarm_snooze, uiState.snoozeMinutes))
                 }
@@ -184,8 +193,8 @@ fun AlarmScreen(
                     onClick = { showDismissDialog = true },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = contentColor,
-                        contentColor = backgroundColor,
+                        containerColor = ContentColor,
+                        contentColor = Color.Black,
                     ),
                 ) {
                     Text(stringResource(R.string.alarm_dismiss))

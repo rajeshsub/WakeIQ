@@ -26,6 +26,18 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
     private val audioManager = context.getSystemService(AudioManager::class.java)
     private var savedAlarmVolume: Int? = null
 
+    // A custom sound's persisted URI-permission grant can be revoked after the alarm was set (the
+    // file is deleted, its provider is uninstalled, storage is cleared, etc.). Without this check,
+    // prepare() would hand ExoPlayer a URI it cannot open: playback fails with a PlaybackException
+    // that is only logged (see the error listener below), so the alarm would ring with total
+    // silence and no on-screen indication. Callers use this to fall back to a bundled sound instead.
+    fun canReadCustomUri(uri: Uri): Boolean = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { true } ?: false
+    }.getOrElse {
+        Timber.w(it, "Custom alarm sound URI is not readable: $uri")
+        false
+    }
+
     fun prepare(soundConfig: SoundConfig) {
         release()
         forceAlarmStreamAudible()
@@ -143,9 +155,23 @@ class AudioPlayer @Inject constructor(@ApplicationContext private val context: C
         player = null
     }
 
+    // Falls back to a bundled sound, rather than letting ExoPlayer fail silently on an unreadable
+    // URI, if the custom sound's access has been revoked since the alarm was set (see
+    // canReadCustomUri). This is a last-resort safety net for the case the EditAlarmScreen check
+    // could not catch (revocation happens between saving the alarm and it firing); the alarm must
+    // still make sound rather than ring silently.
     private fun resolveUri(soundConfig: SoundConfig): Uri = when (soundConfig.type) {
-        SoundType.CUSTOM ->
-            soundConfig.customUri ?: assetUri(BundledSound.BIRDS_LIGHT_RAIN.assetFile)
+        SoundType.CUSTOM -> {
+            val custom = soundConfig.customUri
+            when {
+                custom == null -> assetUri(BundledSound.BIRDS_LIGHT_RAIN.assetFile)
+                canReadCustomUri(custom) -> custom
+                else -> {
+                    Timber.w("Custom alarm sound unreadable at play time, falling back to bundled sound")
+                    assetUri(BundledSound.BIRDS_LIGHT_RAIN.assetFile)
+                }
+            }
+        }
         SoundType.BUNDLED -> assetUri(soundConfig.bundledSound.assetFile)
     }
 

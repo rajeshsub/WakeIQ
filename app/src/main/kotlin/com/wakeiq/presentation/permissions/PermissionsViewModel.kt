@@ -70,9 +70,13 @@ class PermissionsViewModel @Inject constructor(@ApplicationContext private val c
                 )
             }
 
-            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S ||
-                Build.VERSION.SDK_INT == Build.VERSION_CODES.S_V2
-            ) {
+            // canScheduleExactAlarms() is meaningful (and user-revocable via the "Alarms & reminders"
+            // system setting) on every API level >= S, not only S/S_V2: on API 31/32 it is the
+            // install-time-revocable SCHEDULE_EXACT_ALARM permission, and on API 33+ it is the
+            // USE_EXACT_ALARM grant a user can still turn off in system settings. Surfacing this row
+            // only on S/S_V2 previously meant a revocation on API 33+ (most current devices) was
+            // silently unreported here even though AlarmScheduler.schedule() would refuse to schedule.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 add(
                     AppPermission(
                         type = PermissionType.EXACT_ALARM,
@@ -131,9 +135,9 @@ fun areCriticalPermissionsGranted(context: Context): Boolean {
             Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
 
-    val onApi31Or32 = Build.VERSION.SDK_INT == Build.VERSION_CODES.S ||
-        Build.VERSION.SDK_INT == Build.VERSION_CODES.S_V2
-    val exactAlarmOk = !onApi31Or32 || am.canScheduleExactAlarms()
+    // See the matching comment in buildPermissionList(): canScheduleExactAlarms() is checked on
+    // every API level >= S, not only S/S_V2, since it is revocable on API 33+ too.
+    val exactAlarmOk = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
 
     val fsiOk = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
         nm.canUseFullScreenIntent()

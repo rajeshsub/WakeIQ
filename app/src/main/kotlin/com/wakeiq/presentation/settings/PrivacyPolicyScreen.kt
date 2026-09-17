@@ -22,9 +22,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import com.wakeiq.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +37,10 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                 title = { Text("Privacy Policy") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.nav_back),
+                        )
                     }
                 },
             )

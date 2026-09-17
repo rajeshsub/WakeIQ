@@ -45,6 +45,10 @@ data class EditAlarmUiState(
     val is24Hour: Boolean = false,
     val isSaving: Boolean = false,
     val savedOrDeleted: Boolean = false,
+    // True when soundConfig is a CUSTOM sound whose URI can no longer be read (file moved/deleted,
+    // permission revoked). Surfaced in-app at edit time rather than only discovered silently when
+    // the alarm fires with no sound; see AudioPlayer.canReadCustomUri.
+    val customSoundUnavailable: Boolean = false,
 )
 
 @HiltViewModel
@@ -92,6 +96,12 @@ class EditAlarmViewModel @Inject constructor(
                 if (alarm != null) {
                     smartWakeUserChoice = alarm.useSmartWake
                     val nap = isNapDuration(alarm.hour, alarm.minute)
+                    // Re-check a stored custom sound's readability on load: access can be revoked
+                    // (file moved/deleted, permission revoked) any time between when it was picked
+                    // and when this alarm is opened again, not only at the moment it is (re)picked.
+                    val customUri = alarm.soundConfig.customUri
+                    val unavailable = alarm.soundConfig.type == SoundType.CUSTOM &&
+                        customUri != null && !audioPlayer.canReadCustomUri(customUri)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -107,6 +117,7 @@ class EditAlarmViewModel @Inject constructor(
                             useSmartWake = !nap && alarm.useSmartWake,
                             colorIndex = alarm.colorIndex,
                             is24Hour = is24Hour,
+                            customSoundUnavailable = unavailable,
                         )
                     }
                 }
@@ -149,7 +160,12 @@ class EditAlarmViewModel @Inject constructor(
     fun setLabel(label: String) = _uiState.update { it.copy(label = label) }
 
     fun setSound(sound: BundledSound) {
-        _uiState.update { it.copy(soundConfig = it.soundConfig.copy(type = SoundType.BUNDLED, bundledSound = sound)) }
+        _uiState.update {
+            it.copy(
+                soundConfig = it.soundConfig.copy(type = SoundType.BUNDLED, bundledSound = sound),
+                customSoundUnavailable = false,
+            )
+        }
         previewJob?.cancel()
         audioPlayer.playPreview(SoundConfig(type = SoundType.BUNDLED, bundledSound = sound))
         previewJob = viewModelScope.launch {
@@ -159,7 +175,10 @@ class EditAlarmViewModel @Inject constructor(
     }
 
     fun setCustomSound(uri: android.net.Uri) = _uiState.update {
-        it.copy(soundConfig = it.soundConfig.copy(type = SoundType.CUSTOM, customUri = uri))
+        it.copy(
+            soundConfig = it.soundConfig.copy(type = SoundType.CUSTOM, customUri = uri),
+            customSoundUnavailable = !audioPlayer.canReadCustomUri(uri),
+        )
     }
 
     fun setColorIndex(index: Int) = _uiState.update { it.copy(colorIndex = index) }

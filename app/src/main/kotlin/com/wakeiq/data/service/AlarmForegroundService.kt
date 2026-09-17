@@ -19,6 +19,9 @@ import com.wakeiq.data.alarm.AlarmScheduler
 import com.wakeiq.data.audio.AudioPlayer
 import com.wakeiq.data.sensor.MotionDetector
 import com.wakeiq.domain.model.Alarm
+import com.wakeiq.domain.model.AlarmRuntimeEvent
+import com.wakeiq.domain.model.AlarmRuntimeState
+import com.wakeiq.domain.model.AlarmRuntimeTransition
 import com.wakeiq.domain.model.BundledSound
 import com.wakeiq.domain.model.SoundType
 import com.wakeiq.domain.repository.AlarmRepository
@@ -53,8 +56,23 @@ class AlarmForegroundService : Service() {
     private var currentAlarmId: Long = -1L
     private var currentAlarm: Alarm? = null
     private var monitorJob: Job? = null
-    private var escalated = false
+
+    // Single owner of "what is this service currently doing for the in-flight alarm". Replaces
+    // what used to be a standalone `escalated: Boolean` plus inference from `currentAlarm`
+    // nullability; every move is validated by AlarmRuntimeTransition instead of trusted ad hoc.
+    private var runtimeState: AlarmRuntimeState? = null
     private var wakeLock: PowerManager.WakeLock? = null
+
+    // Every call site here is reached from an Android component callback (onStartCommand action,
+    // a motion-detector flow), so a system-triggered input that doesn't fit the current state (a
+    // stray ACTION_DISMISS with no alarm active, a duplicate broadcast) is swallowed and logged
+    // rather than crashing the service. AlarmRuntimeTransition.next remains the single place that
+    // decides legality; this only decides how the service reacts to an illegal one.
+    private fun applyEvent(event: AlarmRuntimeEvent) {
+        runCatching { AlarmRuntimeTransition.next(runtimeState, event) }
+            .onSuccess { runtimeState = it }
+            .onFailure { Timber.w(it, "Ignoring alarm runtime event outside its legal states: $event") }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -116,6 +134,7 @@ class AlarmForegroundService : Service() {
     }
 
     private fun startMonitoring(alarm: Alarm) {
+        applyEvent(AlarmRuntimeEvent.StartMonitoring(alarm.id))
         updateWaitingNotification(alarm)
         motionDetector.startDetection(alarm.motionSensitivity)
         monitorJob = scope.launch {
@@ -127,8 +146,8 @@ class AlarmForegroundService : Service() {
     }
 
     private fun triggerEscalation(alarm: Alarm) {
-        if (escalated) return
-        escalated = true
+        if (runtimeState is AlarmRuntimeState.Ringing) return
+        applyEvent(AlarmRuntimeEvent.StartRinging(alarm.id))
         monitorJob?.cancel()
         motionDetector.stopDetection()
         // Clear any sibling pending alarm for this id (e.g. the ring alarm when motion fired early).
@@ -182,6 +201,7 @@ class AlarmForegroundService : Service() {
 
     private fun dismissAlarm() {
         Timber.i("Alarm dismissed")
+        applyEvent(AlarmRuntimeEvent.Dismiss(currentAlarmId))
         stopAlarmWork()
         getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID_ESCALATION)
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -191,6 +211,7 @@ class AlarmForegroundService : Service() {
     private fun snoozeAlarm() {
         val alarm = currentAlarm
         Timber.i("Alarm snoozed for alarm $currentAlarmId")
+        applyEvent(AlarmRuntimeEvent.Snooze(currentAlarmId))
         stopAlarmWork()
         if (alarm != null) {
             alarmScheduler.scheduleSnooze(alarm)
@@ -208,6 +229,10 @@ class AlarmForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        // Only actually applies (and logs) when the firing is still Monitoring/Ringing, i.e. the
+        // service is being torn down without having gone through dismissAlarm()/snoozeAlarm() -
+        // those already moved runtimeState to a terminal state, so this is then a no-op.
+        applyEvent(AlarmRuntimeEvent.Interrupt(currentAlarmId))
         scope.cancel()
         motionDetector.stopDetection()
         audioPlayer.release()

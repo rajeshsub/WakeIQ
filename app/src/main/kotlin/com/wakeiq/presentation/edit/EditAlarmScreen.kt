@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -39,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -65,6 +67,34 @@ import com.wakeiq.domain.model.SoundCategory
 import com.wakeiq.domain.model.SoundType
 import com.wakeiq.presentation.AlarmPalettes
 import java.time.DayOfWeek
+
+// Mirrors HomeScreen's PermissionWarningBanner styling (errorContainer surface, WarningAmber icon)
+// so degraded-capability warnings look consistent wherever they appear in the app.
+@Composable
+private fun CustomSoundUnavailableWarning() {
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.WarningAmber,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Text(
+                text = stringResource(R.string.custom_sound_unavailable_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -124,7 +154,10 @@ fun EditAlarmScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.nav_back),
+                        )
                     }
                 },
                 actions = {
@@ -281,11 +314,11 @@ fun EditAlarmScreen(
                     )
                     IconButton(
                         onClick = { showSmartWakeDialog = true },
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(48.dp),
                     ) {
                         Icon(
                             Icons.Default.Info,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.smart_wake_info_button),
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -339,6 +372,10 @@ fun EditAlarmScreen(
                         stringResource(R.string.sound_custom)
                     },
                 )
+            }
+
+            if (uiState.customSoundUnavailable) {
+                CustomSoundUnavailableWarning()
             }
 
             Spacer(Modifier.height(8.dp))
