@@ -70,8 +70,8 @@ import com.wakeiq.presentation.AppStateViewModel
 import com.wakeiq.presentation.paletteForIndex
 import com.wakeiq.presentation.permissions.BatteryOptimizationBanner
 import com.wakeiq.presentation.permissions.PermissionsViewModel
-import java.time.DayOfWeek
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 
 private const val DAYS_IN_WEEK = 7
 

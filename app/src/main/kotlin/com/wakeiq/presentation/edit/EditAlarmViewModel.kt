@@ -101,7 +101,8 @@ class EditAlarmViewModel @Inject constructor(
                     // and when this alarm is opened again, not only at the moment it is (re)picked.
                     val customUri = alarm.soundConfig.customUri
                     val unavailable = alarm.soundConfig.type == SoundType.CUSTOM &&
-                        customUri != null && !audioPlayer.canReadCustomUri(customUri)
+                        customUri != null &&
+                        !audioPlayer.canReadCustomUri(customUri)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
