@@ -63,11 +63,13 @@ class AlarmListAccessibilityTest {
             .onNodeWithText(composeRule.activity.getString(R.string.save))
             .performClick()
 
-        // The save writes through the repository (Room, off the main dispatcher) before the
-        // Home screen's StateFlow emits the new list; Compose's own idle-wait only covers the
-        // UI thread's recomposition loop, not that off-thread write, so the card can still be
-        // absent immediately after the click completes.
-        composeRule.waitUntil("the newly saved alarm's card appears", 5_000) {
+        // EditAlarmViewModel.save() runs a full chain before navigating back to Home and
+        // exposing the card: two DataStore reads, the Room insert, and a real
+        // AlarmScheduler.schedule() call (AlarmManager) - only then does savedOrDeleted flip
+        // and the LaunchedEffect in EditAlarmScreen pop the screen. On a CI emulator under
+        // load this chain is meaningfully slower than a bare DB write, so this needs a wider
+        // margin than the minimum "off-thread write" case.
+        composeRule.waitUntil("the newly saved alarm's card appears", 15_000) {
             composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().size == 1
         }
 
