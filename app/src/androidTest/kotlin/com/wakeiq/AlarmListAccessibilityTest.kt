@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -60,8 +61,14 @@ class AlarmListAccessibilityTest {
         composeRule.onNodeWithText(
             composeRule.activity.getString(R.string.edit_alarm_title_new),
         ).assertIsDisplayed()
+        // EditAlarmScreen is a scrollable column; the Save button is not guaranteed to be in
+        // the initial viewport, and clicking a node whose layout coordinates are outside the
+        // visible/laid-out bounds is a known way for a Compose test click to silently not
+        // register on the real target. Scroll to it explicitly before clicking rather than
+        // assuming performClick() alone is enough regardless of position.
         composeRule
             .onNodeWithText(composeRule.activity.getString(R.string.save))
+            .performScrollTo()
             .performClick()
 
         // EditAlarmViewModel.save() runs a full chain before navigating back to Home: two
