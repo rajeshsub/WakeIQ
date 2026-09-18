@@ -1,9 +1,11 @@
 package com.wakeiq
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -41,12 +43,17 @@ class AlarmListAccessibilityTest {
         hiltRule.inject()
     }
 
+    // HomeScreen.kt tags each alarm card "alarm_card_<id>" (AlarmCard's Modifier.testTag). Every
+    // card carries this prefix regardless of which id the DB assigns, so matching the prefix
+    // finds "the" card without assuming a specific id or relying on node counts/ordering, which
+    // are not stable across the rest of the clickable tree (icons, toggles, etc. on this screen).
+    private val isAlarmCard = SemanticsMatcher("has test tag starting with alarm_card_") { node ->
+        node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("alarm_card_") == true
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun alarmCardExposesDeleteAsCustomAccessibilityAction() {
-        val clickableNodesBeforeCreate = composeRule.onAllNodes(hasClickAction()).fetchSemanticsNodes().size
-
-        // Create one alarm so the list has a card to inspect.
         composeRule
             .onNodeWithContentDescription(composeRule.activity.getString(R.string.new_alarm))
             .performClick()
@@ -57,19 +64,17 @@ class AlarmListAccessibilityTest {
             .onNodeWithText(composeRule.activity.getString(R.string.save))
             .performClick()
 
-        composeRule.onAllNodes(hasClickAction()).assertCountEquals(clickableNodesBeforeCreate + 1)
+        composeRule.onAllNodes(isAlarmCard).assertCountEquals(1)
 
         val deleteLabel = composeRule.activity.getString(R.string.delete_alarm)
 
-        // Every clickable node on this screen besides the new card is unchanged by creating the
-        // alarm (FAB, settings icon), so index clickableNodesBeforeCreate (the newly appended
-        // one) is the card (Card(onClick = ...) in HomeScreen.kt). Invoking the label directly
-        // proves both that the action is exposed (TalkBack surfaces custom accessibility actions
-        // by label) and that it actually deletes.
+        // Invoking the label directly (rather than just checking it is present in the node's
+        // semantics config) proves both that the action is exposed - TalkBack surfaces custom
+        // accessibility actions by label - and that it actually deletes the alarm.
         composeRule
-            .onAllNodes(hasClickAction())[clickableNodesBeforeCreate]
+            .onAllNodes(isAlarmCard)[0]
             .performCustomAccessibilityActionWithLabel(deleteLabel)
 
-        composeRule.onAllNodes(hasClickAction()).assertCountEquals(clickableNodesBeforeCreate)
+        composeRule.onAllNodes(isAlarmCard).assertCountEquals(0)
     }
 }
