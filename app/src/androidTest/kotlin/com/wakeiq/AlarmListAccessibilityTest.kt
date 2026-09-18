@@ -1,10 +1,8 @@
 package com.wakeiq
 
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -12,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -44,23 +43,29 @@ class AlarmListAccessibilityTest {
         hiltRule.inject()
     }
 
-    // HomeScreen.kt tags each alarm card "alarm_card_<id>" (AlarmCard's Modifier.testTag). Every
-    // card carries this prefix regardless of which id the DB assigns, so matching the prefix
-    // finds "the" card without assuming a specific id or relying on node counts/ordering, which
-    // are not stable across the rest of the clickable tree (icons, toggles, etc. on this screen).
-    private val isAlarmCard = SemanticsMatcher("has test tag starting with alarm_card_") { node ->
-        node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("alarm_card_") == true
-    }
-
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun alarmCardExposesDeleteAsCustomAccessibilityAction() {
+        // HomeViewModel.seedDefaultAlarmIfNeeded() seeds two alarms ("Weekdays", "Weekends") on
+        // a fresh install/first launch - the exact state of a CI emulator - before this test
+        // creates its own, and AlarmDao orders by (hour, minute), not insertion order, with no
+        // tiebreaker - EditAlarmViewModel's new-alarm default (7:00) ties with the seeded
+        // "Weekends" alarm, so this test's card cannot be reliably picked out by position or
+        // count alone. Giving it a distinctive label removes the ambiguity entirely: the card
+        // is identified by that label's text, not by where it happens to sort.
+        val uniqueLabel = "AlarmListAccessibilityTest ${System.nanoTime()}"
+        val isThisTestsCard = hasAnyDescendant(hasText(uniqueLabel))
+
         composeRule
             .onNodeWithContentDescription(composeRule.activity.getString(R.string.new_alarm))
             .performClick()
         composeRule.onNodeWithText(
             composeRule.activity.getString(R.string.edit_alarm_title_new),
         ).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(composeRule.activity.getString(R.string.label_hint))
+            .performScrollTo()
+            .performTextInput(uniqueLabel)
         // EditAlarmScreen is a scrollable column; the Save button is not guaranteed to be in
         // the initial viewport, and clicking a node whose layout coordinates are outside the
         // visible/laid-out bounds is a known way for a Compose test click to silently not
@@ -88,7 +93,7 @@ class AlarmListAccessibilityTest {
         }
 
         composeRule.waitUntil("the newly saved alarm's card appears", 15_000) {
-            composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().size == 1
+            composeRule.onAllNodes(isThisTestsCard).fetchSemanticsNodes().size == 1
         }
 
         val deleteLabel = composeRule.activity.getString(R.string.delete_alarm)
@@ -97,7 +102,7 @@ class AlarmListAccessibilityTest {
         // semantics config) proves both that the action is exposed - TalkBack surfaces custom
         // accessibility actions by label - and that it actually deletes the alarm.
         composeRule
-            .onAllNodes(isAlarmCard)[0]
+            .onAllNodes(isThisTestsCard)[0]
             .performCustomAccessibilityActionWithLabel(deleteLabel)
 
         // Deletion is gated behind the undo snackbar's SnackbarDuration.Short window
@@ -106,7 +111,7 @@ class AlarmListAccessibilityTest {
         // the action - it disappears once that window elapses. 30s for the same
         // host-level-freeze headroom as the wait above, not just the snackbar duration.
         composeRule.waitUntil("the deleted alarm's card disappears", 30_000) {
-            composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodes(isThisTestsCard).fetchSemanticsNodes().isEmpty()
         }
     }
 }
