@@ -36,48 +36,31 @@ object AlarmRuntimeTransition {
         current: AlarmRuntimeState?,
         event: AlarmRuntimeEvent,
         alarmId: Long,
-    ): AlarmRuntimeState =
-        when (current) {
-            null -> AlarmRuntimeState.Monitoring(alarmId)
-            else -> illegal(current, event)
-        }
+    ): AlarmRuntimeState = when (current) {
+        null -> AlarmRuntimeState.Monitoring(alarmId)
+        else -> illegal(current, event)
+    }
 
-    private fun startRinging(
-        current: AlarmRuntimeState?,
-        event: AlarmRuntimeEvent,
-        alarmId: Long,
-    ): AlarmRuntimeState =
+    private fun startRinging(current: AlarmRuntimeState?, event: AlarmRuntimeEvent, alarmId: Long): AlarmRuntimeState =
         when (current) {
             null, is AlarmRuntimeState.Monitoring, is AlarmRuntimeState.Snoozed ->
                 AlarmRuntimeState.Ringing(alarmId)
             else -> illegal(current, event)
         }
 
-    private fun snooze(
-        current: AlarmRuntimeState?,
-        event: AlarmRuntimeEvent,
-        alarmId: Long,
-    ): AlarmRuntimeState =
+    private fun snooze(current: AlarmRuntimeState?, event: AlarmRuntimeEvent, alarmId: Long): AlarmRuntimeState =
         when (current) {
             is AlarmRuntimeState.Ringing -> AlarmRuntimeState.Snoozed(alarmId)
             else -> illegal(current, event)
         }
 
-    private fun dismiss(
-        current: AlarmRuntimeState?,
-        event: AlarmRuntimeEvent,
-        alarmId: Long,
-    ): AlarmRuntimeState =
+    private fun dismiss(current: AlarmRuntimeState?, event: AlarmRuntimeEvent, alarmId: Long): AlarmRuntimeState =
         when (current) {
             is AlarmRuntimeState.Ringing -> AlarmRuntimeState.Dismissed(alarmId)
             else -> illegal(current, event)
         }
 
-    private fun interrupt(
-        current: AlarmRuntimeState?,
-        event: AlarmRuntimeEvent,
-        alarmId: Long,
-    ): AlarmRuntimeState =
+    private fun interrupt(current: AlarmRuntimeState?, event: AlarmRuntimeEvent, alarmId: Long): AlarmRuntimeState =
         when (current) {
             is AlarmRuntimeState.Monitoring, is AlarmRuntimeState.Ringing -> AlarmRuntimeState.Interrupted(alarmId)
             else -> illegal(current, event)
