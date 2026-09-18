@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -63,13 +64,18 @@ class AlarmListAccessibilityTest {
             .onNodeWithText(composeRule.activity.getString(R.string.save))
             .performClick()
 
-        // EditAlarmViewModel.save() runs a full chain before navigating back to Home and
-        // exposing the card: two DataStore reads, the Room insert, and a real
-        // AlarmScheduler.schedule() call (AlarmManager) - only then does savedOrDeleted flip
-        // and the LaunchedEffect in EditAlarmScreen pop the screen. On a CI emulator under
-        // load this chain is meaningfully slower than a bare DB write, so this needs a wider
-        // margin than the minimum "off-thread write" case.
-        composeRule.waitUntil("the newly saved alarm's card appears", 15_000) {
+        // EditAlarmViewModel.save() runs a full chain before navigating back to Home: two
+        // DataStore reads, the Room insert, and a real AlarmScheduler.schedule() call
+        // (AlarmManager) - only then does savedOrDeleted flip and EditAlarmScreen's
+        // LaunchedEffect pop the screen. Checkpointed separately from the card assertion below
+        // so a failure here (still on the edit screen) is distinguishable from the card itself
+        // never appearing on an already-navigated Home screen.
+        val homeTitle = composeRule.activity.getString(R.string.home_title)
+        composeRule.waitUntil("navigation back to the Home screen after save", 15_000) {
+            composeRule.onAllNodes(hasText(homeTitle)).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule.waitUntil("the newly saved alarm's card appears", 5_000) {
             composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().size == 1
         }
 
