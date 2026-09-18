@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -388,6 +389,7 @@ private fun AlarmCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("alarm_card_${alarm.id}")
             .semantics { customActions = listOf(deleteAction) },
         colors = cardColors,
     ) {
