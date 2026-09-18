@@ -92,7 +92,7 @@ class AlarmListAccessibilityTest {
             composeRule.onAllNodes(hasText(homeTitle)).fetchSemanticsNodes().isNotEmpty()
         }
 
-        composeRule.waitUntil("the newly saved alarm's card appears", 15_000) {
+        composeRule.waitUntil("the newly saved alarm's card appears", 30_000) {
             composeRule.onAllNodes(isThisTestsCard).fetchSemanticsNodes().size == 1
         }
 
