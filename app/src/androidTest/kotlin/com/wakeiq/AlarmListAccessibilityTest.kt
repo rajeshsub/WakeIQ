@@ -4,7 +4,6 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -64,7 +63,13 @@ class AlarmListAccessibilityTest {
             .onNodeWithText(composeRule.activity.getString(R.string.save))
             .performClick()
 
-        composeRule.onAllNodes(isAlarmCard).assertCountEquals(1)
+        // The save writes through the repository (Room, off the main dispatcher) before the
+        // Home screen's StateFlow emits the new list; Compose's own idle-wait only covers the
+        // UI thread's recomposition loop, not that off-thread write, so the card can still be
+        // absent immediately after the click completes.
+        composeRule.waitUntil("the newly saved alarm's card appears", 5_000) {
+            composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().size == 1
+        }
 
         val deleteLabel = composeRule.activity.getString(R.string.delete_alarm)
 
@@ -75,6 +80,12 @@ class AlarmListAccessibilityTest {
             .onAllNodes(isAlarmCard)[0]
             .performCustomAccessibilityActionWithLabel(deleteLabel)
 
-        composeRule.onAllNodes(isAlarmCard).assertCountEquals(0)
+        // Deletion is gated behind the undo snackbar's SnackbarDuration.Short window
+        // (HomeScreen.kt's deleteWithUndo suspends on showSnackbar before calling
+        // viewModel.delete), so the card does not disappear immediately after triggering
+        // the action - it disappears once that window elapses.
+        composeRule.waitUntil("the deleted alarm's card disappears", 10_000) {
+            composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().isEmpty()
+        }
     }
 }
