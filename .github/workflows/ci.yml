@@ -197,7 +197,24 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # GitHub Actions has no native retry for a `uses:` step, and this action's own
+      # composite steps (boot, wait-for-boot) don't expose a retry knob either - the
+      # documented community workaround is a duplicate step gated on the first one's
+      # failure via `continue-on-error` + `if: steps.<id>.outcome == 'failure'`.
+      # Justified here, not a blanket flake-suppression habit: logcat evidence from
+      # this session's CI runs (2.3s single-frame renders, a 13s window with zero
+      # process output, "Failed to start Emulator console" on every run) points at
+      # GitHub's hosted emulator runner itself being resource-starved under
+      # software rendering (swiftshader, no real GPU) - a widely reported ~25-30%
+      # flake rate for this exact action, not a defect in this app or test.
+      # Attempt 1 has continue-on-error so a flaky boot doesn't fail the job outright;
+      # attempt 2 (no continue-on-error) only runs if attempt 1 failed and is what the
+      # job's final status actually depends on in that case. If attempt 1 succeeds,
+      # attempt 2 is skipped and never affects job status - correct either way, no
+      # extra gate step needed.
       - name: Run instrumented tests
+        id: instrumented-tests-attempt-1
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
@@ -208,7 +225,25 @@ jobs:
           # crash before/after the test itself still ends up in the artifact, not just silence.
           script: |
             adb logcat -c
-            adb logcat > logcat.txt &
+            adb logcat > logcat-attempt-1.txt &
+            LOGCAT_PID=$!
+            ./gradlew connectedFullDebugAndroidTest
+            EXIT_CODE=$?
+            kill $LOGCAT_PID || true
+            exit $EXIT_CODE
+
+      - name: Run instrumented tests (retry after flaky emulator boot)
+        id: instrumented-tests-attempt-2
+        if: steps.instrumented-tests-attempt-1.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb logcat -c
+            adb logcat > logcat-attempt-2.txt &
             LOGCAT_PID=$!
             ./gradlew connectedFullDebugAndroidTest
             EXIT_CODE=$?
@@ -227,5 +262,5 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: instrumented-test-logcat
-          path: logcat.txt
+          path: logcat-attempt-*.txt
           if-no-files-found: ignore
