@@ -70,12 +70,17 @@ class AlarmListAccessibilityTest {
         // LaunchedEffect pop the screen. Checkpointed separately from the card assertion below
         // so a failure here (still on the edit screen) is distinguishable from the card itself
         // never appearing on an already-navigated Home screen.
+        // Timeout generous by design, not just for the save chain itself: logcat from a real
+        // CI run (GitHub-hosted emulator, software rendering, no GPU) showed a 13s window with
+        // zero process output mid-test - the emulator host, not this app, stalling completely -
+        // on top of single frames taking over 2s to render. 15s barely covered the chain and
+        // nothing extra; 30s leaves headroom for that class of host-level freeze too.
         val homeTitle = composeRule.activity.getString(R.string.home_title)
-        composeRule.waitUntil("navigation back to the Home screen after save", 15_000) {
+        composeRule.waitUntil("navigation back to the Home screen after save", 30_000) {
             composeRule.onAllNodes(hasText(homeTitle)).fetchSemanticsNodes().isNotEmpty()
         }
 
-        composeRule.waitUntil("the newly saved alarm's card appears", 5_000) {
+        composeRule.waitUntil("the newly saved alarm's card appears", 15_000) {
             composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().size == 1
         }
 
@@ -91,8 +96,9 @@ class AlarmListAccessibilityTest {
         // Deletion is gated behind the undo snackbar's SnackbarDuration.Short window
         // (HomeScreen.kt's deleteWithUndo suspends on showSnackbar before calling
         // viewModel.delete), so the card does not disappear immediately after triggering
-        // the action - it disappears once that window elapses.
-        composeRule.waitUntil("the deleted alarm's card disappears", 10_000) {
+        // the action - it disappears once that window elapses. 30s for the same
+        // host-level-freeze headroom as the wait above, not just the snackbar duration.
+        composeRule.waitUntil("the deleted alarm's card disappears", 30_000) {
             composeRule.onAllNodes(isAlarmCard).fetchSemanticsNodes().isEmpty()
         }
     }
