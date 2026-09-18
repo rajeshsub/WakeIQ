@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
@@ -194,17 +193,12 @@ class EditAlarmViewModel @Inject constructor(
     fun save() {
         val state = _uiState.value
         _uiState.update { it.copy(isSaving = true) }
-        Timber.d("DIAG save() launched")
         viewModelScope.launch {
-            Timber.d("DIAG save() coroutine started, reading prefs")
             val smartWindow = prefs.defaultSmartWindowMinutes.first()
-            Timber.d("DIAG smartWindow read: $smartWindow")
             // Naps (alarm under 90 min away) ring at full volume at the set time, with no gentle ramp.
             val ramp = if (state.isNapDuration) 0 else prefs.defaultRampDurationMinutes.first()
-            Timber.d("DIAG ramp read: $ramp")
             // Motion sensitivity is a global setting only, so it is always read from preferences.
             val sensitivity = prefs.defaultMotionSensitivity.first()
-            Timber.d("DIAG sensitivity read: $sensitivity")
             // Final guard: a nap alarm is never saved with smart wake, regardless of stale state.
             val effectiveSmartWake = state.useSmartWake && !state.isNapDuration
             val alarm = Alarm(
@@ -222,13 +216,9 @@ class EditAlarmViewModel @Inject constructor(
                 useSmartWake = effectiveSmartWake,
                 colorIndex = state.colorIndex,
             )
-            Timber.d("DIAG about to call saveAlarm")
             val savedId = saveAlarm(alarm)
-            Timber.d("DIAG saveAlarm returned id=$savedId, about to call scheduler.schedule")
             scheduler.schedule(alarm.copy(id = savedId))
-            Timber.d("DIAG scheduler.schedule returned, updating state")
             _uiState.update { it.copy(isSaving = false, savedOrDeleted = true) }
-            Timber.d("DIAG state updated, savedOrDeleted=true")
         }
     }
 
