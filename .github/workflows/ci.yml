@@ -204,7 +204,16 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          script: ./gradlew connectedFullDebugAndroidTest
+          # logcat runs for the whole emulator session (not just the test script) so a hang or
+          # crash before/after the test itself still ends up in the artifact, not just silence.
+          script: |
+            adb logcat -c
+            adb logcat > logcat.txt &
+            LOGCAT_PID=$!
+            ./gradlew connectedFullDebugAndroidTest
+            EXIT_CODE=$?
+            kill $LOGCAT_PID || true
+            exit $EXIT_CODE
 
       - name: Upload instrumented test results
         if: always()
@@ -212,3 +221,11 @@ jobs:
         with:
           name: instrumented-test-results
           path: app/build/reports/androidTests/
+
+      - name: Upload instrumented test logcat
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: instrumented-test-logcat
+          path: logcat.txt
+          if-no-files-found: ignore
