@@ -51,11 +51,17 @@ jobs:
         id: nvd-stamp
         run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
+      # Cache the plugin's default data dir. Don't point this at a custom
+      # `dependencyCheck { data { directory } }` path: plugin 13.0.0 ignores
+      # that setting (the task sets its own default with Property.set() and
+      # only wires the extension in as a convention, which never wins), so
+      # the custom dir was never created and no cache was ever saved - every
+      # run paid a cold NVD sync and intermittently hit timeout-minutes.
       - name: Cache OWASP NVD CVE database
         if: ${{ env.NVD_API_KEY != '' }}
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: .dependency-check-data
+          path: ~/.gradle/dependency-check-data
           key: owasp-nvd-data-${{ steps.nvd-stamp.outputs.date }}
           restore-keys: owasp-nvd-data-
 
