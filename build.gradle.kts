@@ -22,12 +22,6 @@ dependencyCheck {
     // CI uploads as an artifact is fixed and documented, not left to a default
     // that could shift between plugin versions.
     outputDirectory.set(layout.buildDirectory.dir("reports/dependency-check"))
-    // Set explicitly (outside build/, since `clean` would otherwise wipe the
-    // synced CVE database) so CI can cache this exact path across runs instead
-    // of re-syncing the full NVD feed every time. See dependency-scan.yml.
-    data {
-        directory = "${rootDir}/.dependency-check-data"
-    }
     nvd {
         // REQUIRED, not just faster-with-one: NVD's API 2.0 has no anonymous
         // fallback in this plugin version - an absent/blank key throws
